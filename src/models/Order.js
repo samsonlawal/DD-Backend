@@ -24,6 +24,14 @@ const orderSchema = new mongoose.Schema(
           type: Number,
           required: true,
         },
+        image: {
+          type: String,
+          required: true,
+        },
+        name: {
+          type: String,
+          required: true,
+        },
       },
     ],
 
@@ -62,6 +70,22 @@ const orderSchema = new mongoose.Schema(
       },
     },
 
+    shippingCost: {
+      type: Number,
+      default: 0,
+    },
+
+    tax: {
+      type: Number,
+      default: 0,
+      // required: true,
+    },
+
+    discount: {
+      type: Number,
+      default: 0,
+    },
+
     paymentMethod: {
       type: String,
       enum: ["card", "cash", "transfer"],
@@ -70,7 +94,7 @@ const orderSchema = new mongoose.Schema(
 
     paymentStatus: {
       type: String,
-      enum: ["pending", "paid", "failed"],
+      enum: ["pending", "paid", "failed", "refunded", "cancelled"],
       default: "pending",
     },
 

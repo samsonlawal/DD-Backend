@@ -1,20 +1,4 @@
-const Order = require("../models/Order");
-
-exports.createOrder = async (req, res) => {
-  try {
-    const order = await Order.create(req.body);
-
-    res.status(201).json({
-      success: true,
-      data: order,
-    });
-  } catch (error) {
-    res.status(400).json({
-      success: false,
-      message: error.message,
-    });
-  }
-};
+const Order = require("../../models/Order");
 
 exports.getAllOrders = async (req, res) => {
   try {
@@ -106,25 +90,32 @@ exports.updateOrderStatus = async (req, res) => {
   }
 };
 
-exports.deleteOrder = async (req, res) => {
-  try {
-    const order = await Order.findByIdAndDelete(req.params.id);
+// exports.deleteOrder = async (req, res) => {
+//   try {
+//     const order = await Order.findByIdAndDelete(req.params.id);
 
-    if (!order) {
-      return res.status(404).json({
-        success: false,
-        message: "Order not found",
-      });
-    }
+//     if (!order) {
+//       return res.status(404).json({
+//         success: false,
+//         message: "Order not found",
+//       });
+//     }
 
-    res.status(200).json({
-      success: true,
-      message: "Order deleted successfully",
-    });
-  } catch (error) {
-    res.status(400).json({
-      success: false,
-      message: error.message,
-    });
-  }
-};
+//     res.status(200).json({
+//       success: true,
+//       message: "Order deleted successfully",
+//     });
+//   } catch (error) {
+//     res.status(400).json({
+//       success: false,
+//       message: error.message,
+//     });
+//   }
+// };
+
+// What's missing:
+
+// Payment provider logic
+// Stock decrement
+// Webhooks
+// Order cancellation rules
