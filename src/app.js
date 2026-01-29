@@ -1,4 +1,6 @@
 const express = require("express");
+const cookieParser = require("cookie-parser");
+
 const userOrderRoutes = require("./routes/v1/user/order.routes");
 const adminOrderRoutes = require("./routes/v1/admin/order.routes");
 const adminProductRoutes = require("./routes/v1/admin/product.routes");
@@ -9,6 +11,7 @@ const userProfileRoutes = require("./routes/v1/user/profile.routes");
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
 
 app.use("/api/user/orders", userOrderRoutes);
 app.use("/api/user/products", userProductRoutes);
