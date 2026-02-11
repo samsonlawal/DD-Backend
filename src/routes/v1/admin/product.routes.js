@@ -8,7 +8,7 @@ const {
   updateProduct,
   deactivateProduct,
   deleteProduct,
-} = require("../../controllers/admin/product.controller");
+} = require("../../../controllers/admin/product.controller");
 
 const auth = require("../../../middleware/auth.middleware");
 const adminOnly = require("../../../middleware/admin.middleware");

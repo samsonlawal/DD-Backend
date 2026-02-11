@@ -41,9 +41,16 @@ exports.login = async (req, res) => {
       return res.status(401).json({ message: "Invalid credentials" });
     }
 
+    // console.log(user);
+
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       return res.status(401).json({ message: "Invalid credentials" });
+    }
+
+    // Check if user is admin (for admin login endpoint)
+    if (user.role !== "admin") {
+      return res.status(403).json({ message: "Admin access required" });
     }
 
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
@@ -59,10 +66,10 @@ exports.login = async (req, res) => {
 
     res.json({
       message: "Login successful",
-      //   role: user.role,
+      role: user.role,
     });
   } catch (err) {
-    res.status(500).json({ message: "Login failed" });
+    res.status(500).json({ message: err.message });
   }
 };
 

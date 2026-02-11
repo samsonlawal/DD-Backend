@@ -3,8 +3,8 @@ const {
   createOrder,
   getOrderById,
   getUserOrders,
-} = require("../../controllers/admin/order.controller");
-const { auth } = require("../../../middleware/auth.middleware");
+} = require("../../../controllers/user/order.controller");
+const auth = require("../../../middleware/auth.middleware");
 const router = express.Router();
 
 router.post("/", auth, createOrder);

@@ -2,7 +2,7 @@ const express = require("express");
 const {
   getProducts,
   getProductById,
-} = require("../../controllers/user/product.controller");
+} = require("../../../controllers/user/product.controller");
 
 const auth = require("../../../middleware/auth.middleware");
 

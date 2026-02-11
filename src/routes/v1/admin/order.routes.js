@@ -5,9 +5,9 @@ const {
   getUserOrders,
   updateOrderStatus,
   // deleteOrder,
-} = require("../../controllers/admin/order.controller");
-const { auth } = require("../../../middleware/auth.middleware");
-const { adminOnly } = require("../../../middleware/admin.middleware");
+} = require("../../../controllers/admin/order.controller");
+const auth = require("../../../middleware/auth.middleware");
+const adminOnly = require("../../../middleware/admin.middleware");
 const router = express.Router();
 
 router.get("/", auth, adminOnly, getAllOrders);

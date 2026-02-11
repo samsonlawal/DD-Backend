@@ -5,7 +5,7 @@ const {
   getUserById,
   updateUser,
   deleteUser,
-} = require("../../../controllers/user.controller");
+} = require("../../../controllers/admin/user.controller");
 
 const auth = require("../../../middleware/auth.middleware");
 const adminOnly = require("../../../middleware/admin.middleware");
