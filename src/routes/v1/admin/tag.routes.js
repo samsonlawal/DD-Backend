@@ -13,13 +13,13 @@ const {
 const auth = require("../../../middleware/auth.middleware");
 const adminOnly = require("../../../middleware/admin.middleware");
 
-router.get("/", getTags);
-router.get("/:id", getTagById);
+router.get("/", auth, adminOnly, getTags);
+router.get("/:id", auth, adminOnly, getTagById);
 
-router.post("/", createTag);
-router.put("/:id", updateTag);
-router.put("/:id/deactivate", deactivateTag);
-router.delete("/:id", deleteTag);
+router.post("/", auth, adminOnly, createTag);
+router.put("/:id", auth, adminOnly, updateTag);
+router.put("/:id/deactivate", auth, adminOnly, deactivateTag);
+router.delete("/:id", auth, adminOnly, deleteTag);
 
 // router.delete("/:id", auth, adminOnly, deleteTag);
 

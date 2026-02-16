@@ -1,6 +1,24 @@
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 const User = require("../../models/User");
+const crypto = require("crypto");
+
+const maxAge = 3 * 24 * 60 * 60;
+const createToken = ({ id, email }) => {
+  return jwt.sign({ id, email }, process.env.JWT_SECRET, {
+    expiresIn: maxAge,
+  });
+};
+
+const formattedUser = (user) => {
+  return {
+    userId: user._id,
+    name: user.name,
+    email: user.email,
+    role: user.role,
+    isActive: user.isActive,
+  };
+};
 
 exports.signup = async (req, res) => {
   try {
@@ -32,17 +50,12 @@ exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    if (!email || !password) {
-      return res.status(400).json({ message: "All fields required" });
-    }
-
     const user = await User.findOne({ email });
     if (!user) {
       return res.status(401).json({ message: "Invalid credentials" });
     }
 
     // console.log(user);
-
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       return res.status(401).json({ message: "Invalid credentials" });
@@ -53,20 +66,20 @@ exports.login = async (req, res) => {
       return res.status(403).json({ message: "Admin access required" });
     }
 
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
-      expiresIn: "1d",
-    });
+    const token = createToken({ id: user._id, email: user.email });
 
     res.cookie("token", token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
+      // secure: process.env.NODE_ENV === "production",
       sameSite: "strict",
       maxAge: 1 * 24 * 60 * 60 * 1000,
     });
 
-    res.json({
-      message: "Login successful",
-      role: user.role,
+    res.status(200).json({
+      user: formattedUser(user),
+      token,
+      success: true,
+      message: "Login Successful",
     });
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -76,6 +89,7 @@ exports.login = async (req, res) => {
 exports.logout = (req, res) => {
   res.clearCookie("token", {
     httpOnly: true,
+    // secure: process.env.NODE_ENV === "production",
     sameSite: "strict",
   });
 

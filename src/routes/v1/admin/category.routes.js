@@ -13,13 +13,13 @@ const {
 const auth = require("../../../middleware/auth.middleware");
 const adminOnly = require("../../../middleware/admin.middleware");
 
-router.get("/", getCategories);
-router.get("/:id", getCategoryById);
+router.get("/", auth, adminOnly, getCategories);
+router.get("/:id", auth, adminOnly, getCategoryById);
 
-router.post("/", createCategory);
-router.put("/:id", updateCategory);
-router.put("/:id/deactivate", deactivateCategory);
-router.delete("/:id", deleteCategory);
+router.post("/", auth, adminOnly, createCategory);
+router.put("/:id", auth, adminOnly, updateCategory);
+router.put("/:id/deactivate", auth, adminOnly, deactivateCategory);
+router.delete("/:id", auth, adminOnly, deleteCategory);
 
 // router.post("/", auth, adminOnly, createCategory);
 // router.put("/:id", auth, adminOnly, updateCategory);
