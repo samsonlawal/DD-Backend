@@ -16,18 +16,44 @@ const userCategoryRoutes = require("./routes/v1/user/category.routes");
 const adminAuthRoutes = require("./routes/v1/admin/auth.routes");
 
 const app = express();
-app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
-app.use(cookieParser());
+
+app.set("trust proxy", 1);
 
 app.use(
   cors({
-    origin: ["http://localhost:3000", "https://discountdrinks.vercel.app"],
+    origin: [
+      "http://localhost:3000",
+      "https://discountdrinks.vercel.app",
+      "https://discount-drinks-admin.vercel.app",
+    ],
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
   }),
 );
+
+app.options(
+  "/:path(*)",
+  cors({
+    origin: [
+      "http://localhost:3000",
+      "https://discountdrinks.vercel.app",
+      "https://discount-drinks-admin.vercel.app",
+    ],
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  }),
+);
+
+app.use(cookieParser());
+app.use(express.json({ limit: "50mb" }));
+app.use(express.urlencoded({ extended: true, limit: "10mb" }));
+
+// app.options("*", cors());
+
+// adminPassword@123
+// admin@discountdrinks.com
 
 app.use("/api/user/orders", userOrderRoutes);
 app.use("/api/user/products", userProductRoutes);
