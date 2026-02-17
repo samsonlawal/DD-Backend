@@ -17,8 +17,6 @@ const adminAuthRoutes = require("./routes/v1/admin/auth.routes");
 
 const app = express();
 
-app.set("trust proxy", 1);
-
 // List of allowed origins
 const allowedOrigins = [
   "http://localhost:3000",
@@ -26,35 +24,59 @@ const allowedOrigins = [
   "https://discount-drinks-admin.vercel.app",
 ];
 
+app.set("trust proxy", 1);
+
 // Global CORS middleware
-app.use((req, res, next) => {
-  const origin = req.headers.origin;
-  if (allowedOrigins.includes(origin)) {
-    res.setHeader("Access-Control-Allow-Origin", origin);
-    res.setHeader("Access-Control-Allow-Credentials", "true");
-    res.setHeader(
-      "Access-Control-Allow-Methods",
-      "GET, POST, PUT, PATCH, DELETE, OPTIONS",
-    );
-    res.setHeader(
-      "Access-Control-Allow-Headers",
-      "Content-Type, Authorization",
-    );
-  }
+// app.use((req, res, next) => {
+// const origin = req.headers.origin;
+// if (allowedOrigins.includes(origin)) {
+//   res.setHeader("Access-Control-Allow-Origin", origin);
+//   res.setHeader("Access-Control-Allow-Credentials", "true");
+//   res.setHeader(
+//     "Access-Control-Allow-Methods",
+//     "GET, POST, PUT, PATCH, DELETE, OPTIONS",
+//   );
+//   res.setHeader(
+//     "Access-Control-Allow-Headers",
+//     "Content-Type, Authorization",
+//   );
+// }
 
-  // Handle preflight requests
-  if (req.method === "OPTIONS") {
-    return res.sendStatus(200);
-  }
+// origin: [
+//   "http://localhost:3000",
+//   "https://discountdrinks.vercel.app",
+//   "https://discount-drinks-admin.vercel.app",
+//   "*",
+// ];
 
-  next();
-});
+// Handle preflight requests
+//   if (req.method === "OPTIONS") {
+//     return res.sendStatus(204);
+//   }
+
+//   next();
+// });
+
+app.use(
+  cors({
+    origin: [
+      "http://localhost:3000",
+      "https://discountdrinks.vercel.app",
+      "https://discount-drinks-admin.vercel.app",
+      "*",
+    ],
+    credentials: "true",
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+
+    // Important if you're sending cookies/auth headers
+    credentials: true,
+    allowedHeaders: ["Content-Type", "Authorization"],
+  }),
+);
 
 app.use(cookieParser());
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
-
-// app.options("*", cors());
 
 // adminPassword@123
 // admin@discountdrinks.com
