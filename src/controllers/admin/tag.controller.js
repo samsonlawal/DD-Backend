@@ -2,12 +2,12 @@ const Tag = require("../../models/Tag");
 
 exports.getTags = async (req, res) => {
   try {
-    const tags = await Tag.find().select("name isActive createdAt _id");
+    const tags = await Tag.find().select("name status createdAt _id");
 
     const formattedTags = tags.map((tag) => ({
       id: tag._id,
       name: tag.name,
-      isActive: tag.isActive,
+      status: tag.status,
       createdAt: tag.createdAt,
     }));
 
@@ -27,7 +27,7 @@ exports.getTags = async (req, res) => {
 exports.getTagById = async (req, res) => {
   try {
     const tag = await Tag.findById(req.params.id).select(
-      "name isActive createdAt _id",
+      "name status createdAt _id",
     );
 
     if (!tag) {
@@ -58,7 +58,7 @@ exports.createTag = async (req, res) => {
       data: {
         id: tag._id,
         name: tag.name,
-        isActive: tag.isActive,
+        status: tag.status,
         createdAt: tag.createdAt,
       },
     });
@@ -100,7 +100,7 @@ exports.deactivateTag = async (req, res) => {
   try {
     const tag = await Tag.findByIdAndUpdate(
       req.params.id,
-      { isActive: false },
+      { status: "inactive" },
       { new: true },
     );
 

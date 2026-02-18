@@ -14,9 +14,10 @@ const tagSchema = new mongoose.Schema(
       trim: true,
     },
 
-    isActive: {
-      type: Boolean,
-      default: true,
+    status: {
+      type: String,
+      enum: ["active", "inactive"],
+      default: "active",
     },
   },
   { timestamps: true },
