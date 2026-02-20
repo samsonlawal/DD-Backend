@@ -4,16 +4,21 @@ const cors = require("cors");
 
 const userOrderRoutes = require("./routes/v1/user/order.routes");
 const adminOrderRoutes = require("./routes/v1/admin/order.routes");
+
 const adminProductRoutes = require("./routes/v1/admin/product.routes");
 const userProductRoutes = require("./routes/v1/user/product.routes");
+
 const adminUserRoutes = require("./routes/v1/admin/user.routes");
 const userProfileRoutes = require("./routes/v1/user/profile.routes");
+
 const adminTagRoutes = require("./routes/v1/admin/tag.routes");
 const userTagRoutes = require("./routes/v1/user/tag.routes");
+
 const adminCategoryRoutes = require("./routes/v1/admin/category.routes");
 const userCategoryRoutes = require("./routes/v1/user/category.routes");
 
 const adminAuthRoutes = require("./routes/v1/admin/auth.routes");
+const userAuthRoutes = require("./routes/v1/user/auth.routes");
 
 const app = express();
 
@@ -67,7 +72,6 @@ app.use(
       "https://discount-drinks-admin.vercel.app",
       "*",
     ],
-    credentials: "true",
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
 
     // Important if you're sending cookies/auth headers
@@ -88,6 +92,8 @@ app.use("/api/user/products", userProductRoutes);
 app.use("/api/user/profile", userProfileRoutes);
 app.use("/api/user/tags", userTagRoutes);
 app.use("/api/user/categories", userCategoryRoutes);
+app.use("/api/user/auth", userAuthRoutes);
+
 
 app.use("/api/admin/orders", adminOrderRoutes);
 app.use("/api/admin/products", adminProductRoutes);

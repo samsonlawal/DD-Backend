@@ -22,9 +22,9 @@ const formattedUser = (user) => {
 
 exports.signup = async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    const { name, username, email, password } = req.body;
 
-    if (!name || !email || !password) {
+    if (!name || !email || !password || !username) {
       return res.status(400).json({ message: "All fields required" });
     }
 
@@ -32,12 +32,16 @@ exports.signup = async (req, res) => {
     if (existingUser) {
       return res.status(400).json({ message: "Email already in use" });
     }
-    const hashedPassword = await bcrypt.hash(password, 12);
 
+    const existingUsername = await User.findOne({ username });
+    if (existingUsername) {
+      return res.status(400).json({ message: "Username already in use" });
+    }
     const user = await User.create({
       name,
+      username,
       email,
-      password: hashedPassword,
+      password,
     });
 
     res.status(201).json({ message: "Signup successful" });
@@ -55,16 +59,16 @@ exports.login = async (req, res) => {
       return res.status(401).json({ message: "Invalid credentials" });
     }
 
-    // console.log(user);
+    console.log(user);
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       return res.status(401).json({ message: "Invalid credentials" });
     }
 
     // Check if user is admin (for admin login endpoint)
-    if (user.role !== "admin") {
-      return res.status(403).json({ message: "Admin access required" });
-    }
+    // if (user.role !== "admin") {
+    //   return res.status(403).json({ message: "Admin access required" });
+    // }
 
     const token = createToken({ id: user._id, email: user.email });
 

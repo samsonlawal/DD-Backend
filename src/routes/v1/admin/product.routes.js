@@ -1,6 +1,24 @@
 const express = require("express");
 const router = express.Router();
 
+// TEMP MIGRATION ROUTE
+router.get("/migrate-categories", async (req, res) => {
+  try {
+    const mongoose = require("mongoose");
+    const collection = mongoose.connection.db.collection("categories");
+    const result = await collection.updateMany(
+      {}, 
+      { 
+        $set: { status: "active" },
+        $unset: { isActive: "" } 
+      }
+    );
+    res.json({ success: true, result });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 const {
   getProducts,
   getProductById,

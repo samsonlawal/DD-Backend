@@ -4,11 +4,11 @@ const {
   getProductById,
 } = require("../../../controllers/user/product.controller");
 
-const auth = require("../../../middleware/auth.middleware");
+// const auth = require("../../../middleware/auth.middleware");
 
 const router = express.Router();
 
-router.get("/", auth, getProducts);
-router.get("/:id", auth, getProductById);
+router.get("/", getProducts);
+router.get("/:id", getProductById);
 
 module.exports = router;
