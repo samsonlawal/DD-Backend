@@ -15,6 +15,7 @@ const formattedUser = (user) => {
     userId: user._id,
     name: user.name,
     email: user.email,
+    username: user.username,
     role: user.role,
     isActive: user.isActive,
   };
@@ -74,7 +75,6 @@ exports.login = async (req, res) => {
 
     res.cookie("token", token, {
       httpOnly: true,
-      // secure: process.env.NODE_ENV === "production",
       sameSite: "None",
       secure: true,
       maxAge: 1 * 24 * 60 * 60 * 1000,
