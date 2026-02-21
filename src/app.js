@@ -17,6 +17,9 @@ const userTagRoutes = require("./routes/v1/user/tag.routes");
 const adminCategoryRoutes = require("./routes/v1/admin/category.routes");
 const userCategoryRoutes = require("./routes/v1/user/category.routes");
 
+const adminBrandRoutes = require("./routes/v1/admin/brand.routes");
+const userBrandRoutes = require("./routes/v1/user/brand.routes");
+
 const adminAuthRoutes = require("./routes/v1/admin/auth.routes");
 const userAuthRoutes = require("./routes/v1/user/auth.routes");
 
@@ -92,6 +95,7 @@ app.use("/api/user/products", userProductRoutes);
 app.use("/api/user/profile", userProfileRoutes);
 app.use("/api/user/tags", userTagRoutes);
 app.use("/api/user/categories", userCategoryRoutes);
+app.use("/api/user/brands", userBrandRoutes);
 app.use("/api/user/auth", userAuthRoutes);
 
 
@@ -100,6 +104,7 @@ app.use("/api/admin/products", adminProductRoutes);
 app.use("/api/admin/users", adminUserRoutes);
 app.use("/api/admin/tags", adminTagRoutes);
 app.use("/api/admin/categories", adminCategoryRoutes);
+app.use("/api/admin/brands", adminBrandRoutes);
 app.use("/api/admin/auth", adminAuthRoutes);
 
 app.get("/health", (req, res) => {
