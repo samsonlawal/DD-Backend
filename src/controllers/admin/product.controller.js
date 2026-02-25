@@ -41,57 +41,49 @@ exports.getProductById = async (req, res) => {
   }
 };
 
-exports.createProduct = async (req, res) => {
-  try {
-    let imageUrls = [];
-    if (req.files && req.files.length > 0) {
-      imageUrls = await Promise.all(
-        req.files.map((file) => uploadToCloudinary(file.buffer, "products"))
-      );
-    }
-    
-    let existingImages = [];
-    if (req.body.images) {
-      if (typeof req.body.images === "string") {
-        try {
-          const parsed = JSON.parse(req.body.images);
-          existingImages = Array.isArray(parsed) ? parsed : [req.body.images];
-        } catch (e) {
-          existingImages = [req.body.images];
-        }
-      } else {
-        existingImages = Array.isArray(req.body.images) ? req.body.images : [req.body.images];
-      }
-    } else if (req.body.existingImages) {
-      existingImages = Array.isArray(req.body. existingImages) ? req.body.existingImages : [req.body.existingImages];
-    } else if (req.body["existingImages[]"]) {
-      existingImages = Array.isArray(req.body["existingImages[]"]) ? req.body["existingImages[]"] : [req.body["existingImages[]"]];
-    }
-    
-    existingImages = existingImages.filter(img => typeof img === "string" && img.trim() !== "" && img !== "[{}]" && img !== "[ {} ]");
-    
-    req.body.images = [...existingImages, ...imageUrls];
+exports.createProduct = async (req, res) => { 
+  
+try {
+   let uploadedImages = [] 
+   console.log(req.files)
+  // Upload new files 
+  if (req.files?.length) { uploadedImages = await Promise.all(
+     req.files.map(file => uploadToCloudinary(
+      file.buffer, "products"
+    ) ) ) } 
+  // Parse existing images (expect JSON string) 
+  let existingImages = [] 
+  if (req.body.existingImages) { 
+    try { 
+      existingImages = JSON.parse(req.body.existingImages) 
+    } catch { 
+      existingImages = [] 
+    } } 
+    if (!Array.isArray(existingImages)) {
+       existingImages = [] 
+      } 
+      // Merge 
+      req.body.images = [...existingImages, ...uploadedImages] 
 
-    if (req.body.specifications && typeof req.body.specifications === "string") {
-      try { req.body.specifications = JSON.parse(req.body.specifications); } catch(e) {}
-    }
-    if (req.body.tags && typeof req.body.tags === "string") {
-      try { req.body.tags = JSON.parse(req.body.tags); } catch(e) {}
-    }
+      // Parse JSON fields 
+      if (typeof req.body.specifications === "string") {
+         try { req.body.specifications = JSON.parse(req.body.specifications) 
 
-    const product = await Product.create(req.body);
+         } catch {} }
+         
+        if (typeof req.body.tags === "string") {
+           try { req.body.tags = JSON.parse(req.body.tags) 
 
+           } catch {} } 
+           
+          const product = await Product.create(req.body) 
     res.status(201).json({
-      success: true,
-      data: product,
-    });
-  } catch (error) {
-    res.status(400).json({
-      success: false,
-      message: error.message,
-    });
-  }
-};
+       success: true, data: product, 
+      }) } catch (error) {
+         res.status(400).json({
+           success: false, message: error.message, 
+          }) } 
+        }
 
 exports.updateProduct = async (req, res) => {
   try {
