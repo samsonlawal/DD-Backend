@@ -19,6 +19,9 @@ const categorySchema = new mongoose.Schema(
       enum: ["active", "inactive"],
       default: "active",
     },
+      subCategories: [{
+    type: String,
+  }],
   },
   { timestamps: true },
 );
