@@ -33,14 +33,19 @@ const userSchema = new mongoose.Schema(
       trim: true,
     },
 
-    address: {
-      addressOne: String,
-      addressTwo: String,
+    addresses: [{
+      addressLine1: String,
+      addressLine2: String,
       city: String,
       state: String,
-      zipCode: String,
+      postCode: String,
+      phone: String,
       country: String,
-    },
+      isDefault: {
+        type: Boolean,
+        default: false
+      }
+    }],
 
     role: {
       type: String,
