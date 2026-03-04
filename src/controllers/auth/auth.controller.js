@@ -18,6 +18,7 @@ const formattedUser = (user) => {
     username: user.username,
     role: user.role,
     isActive: user.isActive,
+    addresses: user.addresses,
   };
 };
 

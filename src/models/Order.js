@@ -8,11 +8,16 @@ const orderSchema = new mongoose.Schema(
       required: true,
     },
 
+    orderId: {
+      type: String,
+      unique: true,
+      required: true,
+    },
+
     items: [
       {
         product: {
           type: mongoose.Schema.Types.ObjectId,
-          ref: "Product",
           required: true,
         },
         quantity: {
@@ -26,7 +31,6 @@ const orderSchema = new mongoose.Schema(
         },
         image: {
           type: String,
-          required: true,
         },
         name: {
           type: String,
@@ -48,6 +52,13 @@ const orderSchema = new mongoose.Schema(
     },
 
     shippingAddress: {
+      addressLine1: {
+        type: String,
+        required: true,
+      },
+      addressLine2: {
+        type: String,
+      },
       street: {
         type: String,
         required: true,
@@ -60,7 +71,7 @@ const orderSchema = new mongoose.Schema(
         type: String,
         required: true,
       },
-      zipCode: {
+      postCode: {
         type: String,
         required: true,
       },
@@ -94,7 +105,7 @@ const orderSchema = new mongoose.Schema(
 
     paymentStatus: {
       type: String,
-      enum: ["pending", "paid", "failed", "refunded", "cancelled"],
+      enum: ["pending", "paid", "delivered", "collected", "failed", "refunded", "cancelled"],
       default: "pending",
     },
 

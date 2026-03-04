@@ -3,8 +3,7 @@ const Order = require("../../models/Order");
 exports.getAllOrders = async (req, res) => {
   try {
     const orders = await Order.find()
-      .populate("user", "name email")
-      .populate("items.product", "name price");
+      .populate("user", "name email");
 
     res.status(200).json({
       success: true,
@@ -21,8 +20,7 @@ exports.getAllOrders = async (req, res) => {
 exports.getOrderById = async (req, res) => {
   try {
     const order = await Order.findById(req.params.id)
-      .populate("user", "name email phone")
-      .populate("items.product", "name price description");
+      .populate("user", "name email phone");
 
     if (!order) {
       return res.status(404).json({
@@ -46,7 +44,6 @@ exports.getOrderById = async (req, res) => {
 exports.getUserOrders = async (req, res) => {
   try {
     const orders = await Order.find({ user: req.params.userId })
-      .populate("items.product", "name price")
       .sort({ createdAt: -1 });
 
     res.status(200).json({
