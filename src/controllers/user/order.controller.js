@@ -147,7 +147,7 @@ exports.createOrder = async (req, res) => {
     await session.abortTransaction();
     session.endSession();
     console.error("Order Creation Error:", error);
-    res.status(500).json({ message: "Server error during order creation" });
+    res.status(500).json({ message: "Server error during order creation", error: error.message });
   }
 };
 

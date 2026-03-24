@@ -2,6 +2,7 @@ const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 const User = require("../../models/User");
 const crypto = require("crypto");
+const { sendWelcomeEmail, sendPasswordResetOTP, sendPasswordResetSuccess } = require("../../utils/email");
 
 const maxAge = 3 * 24 * 60 * 60;
 const createToken = ({ id, email }) => {
@@ -45,6 +46,9 @@ exports.signup = async (req, res) => {
       email,
       password,
     });
+
+    // Send Welcome Email asynchronously
+    sendWelcomeEmail(user.email, user.name).catch(console.error);
 
     res.status(201).json({ message: "Signup successful" });
   } catch (err) {
@@ -100,4 +104,92 @@ exports.logout = (req, res) => {
   });
 
   res.json({ message: "Logged out" });
+};
+
+exports.forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+    const user = await User.findOne({ email });
+    
+    // Always return generic success to prevent email enumeration
+    if (!user) {
+      return res.status(200).json({ message: "If an account exists, a reset code has been sent.", success: true });
+    }
+
+    // Generate 6-digit OTP
+    const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+
+    // Set expiry (10 minutes)
+    const expireTime = Date.now() + 10 * 60 * 1000;
+
+    user.resetPasswordOTP = otpCode;
+    user.resetPasswordExpire = expireTime;
+    await user.save({ validateBeforeSave: false });
+
+    // Send the email
+    await sendPasswordResetOTP(user.email, user.name, otpCode);
+
+    res.status(200).json({ message: "If an account exists, a reset code has been sent.", success: true });
+  } catch (error) {
+    console.error("Forgot Password Error:", error);
+    res.status(500).json({ message: "Error processing request", success: false });
+  }
+};
+
+exports.verifyCode = async (req, res) => {
+  try {
+    const { email, code } = req.body;
+
+    if (!email || !code) {
+      return res.status(400).json({ message: "Email and code are required", success: false });
+    }
+
+    const user = await User.findOne({
+      email,
+      resetPasswordOTP: code,
+      resetPasswordExpire: { $gt: Date.now() },
+    });
+
+    if (!user) {
+      return res.status(400).json({ message: "Invalid or expired reset code", success: false });
+    }
+
+    res.status(200).json({ message: "Code verified successfully", success: true });
+  } catch (error) {
+    res.status(500).json({ message: "Error verifying code", success: false });
+  }
+};
+
+exports.resetPassword = async (req, res) => {
+  try {
+    const { email, code, newPassword } = req.body;
+
+    if (!email || !code || !newPassword) {
+      return res.status(400).json({ message: "Please provide all required fields", success: false });
+    }
+
+    const user = await User.findOne({
+      email,
+      resetPasswordOTP: code,
+      resetPasswordExpire: { $gt: Date.now() },
+    });
+
+    if (!user) {
+      return res.status(400).json({ message: "Invalid or expired reset code", success: false });
+    }
+
+    // Update password (pre-save hook will hash it automatically)
+    user.password = newPassword;
+    user.resetPasswordOTP = undefined;
+    user.resetPasswordExpire = undefined;
+    await user.save();
+
+    // Send Success Email
+    sendPasswordResetSuccess(user.email, user.name).catch(console.error);
+
+    res.status(200).json({ message: "Password reset successfully", success: true });
+  } catch (error) {
+    console.error("Reset Password Error:", error);
+    res.status(500).json({ message: "Error resetting password", success: false });
+  }
 };
