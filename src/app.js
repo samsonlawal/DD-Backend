@@ -23,6 +23,8 @@ const userBrandRoutes = require("./routes/v1/user/brand.routes");
 const adminAuthRoutes = require("./routes/v1/admin/auth.routes");
 const userAuthRoutes = require("./routes/v1/user/auth.routes");
 
+const webhookRoutes = require("./routes/webhook.routes");
+
 const app = express();
 
 // List of allowed origins
@@ -70,6 +72,8 @@ app.use(
     origin: [
       "http://localhost:3000",
       "http://localhost:3001",
+      "https://discount-drinks-frontend-git-staging-samsons-projects-c84cc3b1.vercel.app",
+      "https://discountdrinksandmoreltd.co.uk",
 
       "https://discountdrinks.vercel.app",
       "https://discount-drinks-admin.vercel.app",
@@ -84,6 +88,10 @@ app.use(
 );
 
 app.use(cookieParser());
+
+// Webhooks must be mounted BEFORE express.json() so the raw body parser works
+app.use("/api/webhooks", webhookRoutes);
+
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
@@ -95,7 +103,7 @@ app.use("/api/user/products", userProductRoutes);
 app.use("/api/user/profile", userProfileRoutes);
 app.use("/api/user/tags", userTagRoutes);
 app.use("/api/user/categories", userCategoryRoutes);
-app.use("/api/user/brands", userBrandRoutes);
+app.use("/api/user/brands", userBrandRoutes); 
 app.use("/api/user/auth", userAuthRoutes);
 
 

@@ -6,13 +6,20 @@ exports.getProducts = async (req, res) => {
     const limit = parseInt(req.query.limit, 10) || 10;
     const skip = (page - 1) * limit;
 
-    const products = await Product.find({ status: "active" })
+    const { category, brand, subCategory } = req.query;
+    const filter = { status: "active" };
+
+    if (category && category !== "") filter.category = { $regex: category, $options: "i" };
+    if (brand && brand !== "") filter.brand = { $regex: brand, $options: "i" };
+    if (subCategory && subCategory !== "") filter.subCategory = { $regex: subCategory, $options: "i" };
+
+    const products = await Product.find(filter)
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit)
       .lean();
 
-    const total = await Product.countDocuments({ status: "active" });
+    const total = await Product.countDocuments(filter);
 
     res.status(200).json({
       success: true,

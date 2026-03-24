@@ -109,6 +109,10 @@ const orderSchema = new mongoose.Schema(
       default: "pending",
     },
 
+    stripeSessionId: {
+      type: String,
+    },
+
     notes: {
       type: String,
     },

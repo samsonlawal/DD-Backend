@@ -1,14 +1,21 @@
+const mongoose = require("mongoose");
 const Order = require("../../models/Order");
 // const Coupon = require("../../models/Coupon");
 const Product = require("../../models/Product");
 const Counter = require("../../models/Counter");
 const calculateOrderTotals = require("../../utils/calculateOrderTotals");
+const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 
 exports.createOrder = async (req, res) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
   try {
     const { items, couponCode, paymentMethod, shippingAddress } = req.body;
 
     if (!items || items.length === 0) {
+      await session.abortTransaction();
+      session.endSession();
       return res.status(400).json({ message: "No items provided" });
     }
 
@@ -16,15 +23,20 @@ exports.createOrder = async (req, res) => {
     const detailedItems = [];
 
     for (const item of items) {
-      const product = await Product.findById(item.product);
+      // NOTE: use .session(session) to ensure reads are part of transaction lock
+      const product = await Product.findById(item.product).session(session);
 
       if (!product) {
+        await session.abortTransaction();
+        session.endSession();
         return res.status(404).json({
           message: `Product not found: ${item.product}`
         });
       }
 
       if (product.availableQuantity < item.quantity) {
+        await session.abortTransaction();
+        session.endSession();
         return res.status(400).json({
           message: `Insufficient stock for ${item.name}`
         });
@@ -38,32 +50,13 @@ exports.createOrder = async (req, res) => {
       });
     }
 
-    console.log("Detailed Items after fetching from DB:", detailedItems.map(i => ({ 
-      id: i.product._id, 
-      price: i.product.price, 
-      name: i.product.name 
-    })));
-
     // 2️⃣ Fetch coupon (if provided)
     let coupon = null;
 
     if (couponCode) {
-      coupon = await Coupon.findOne({
-        code: couponCode,
-        isActive: true
-      });
-
-      if (!coupon) {
-        return res.status(400).json({
-          message: "Invalid or expired coupon"
-        });
-      }
-
-      if (coupon.expiresAt && coupon.expiresAt < new Date()) {
-        return res.status(400).json({
-          message: "Coupon has expired"
-        });
-      }
+      // Not yet fully implemented, but passing session just in case
+      // coupon = await Coupon.findOne({ code: couponCode, isActive: true }).session(session);
+      // ... same error checks
     }
 
     // 3️⃣ Define tax + shipping
@@ -82,15 +75,40 @@ exports.createOrder = async (req, res) => {
     const counter = await Counter.findOneAndUpdate(
       { id: "orderId" },
       { $inc: { seq: 1 } },
-      { new: true, upsert: true }
+      { new: true, upsert: true, session }
     );
     
     // Format sequence to always be 4 digits (e.g., 0001)
     const formattedSeq = counter.seq.toString().padStart(4, "0");
     const orderId = `ORD${formattedSeq}`;
 
-    // 5️⃣ Create order
-    const order = await Order.create({
+    // 5️⃣ Create Stripe Checkout Session
+    const origin = req.headers.origin || process.env.CLIENT_URL || "http://localhost:3000";
+
+    const stripeSession = await stripe.checkout.sessions.create({
+      payment_method_types: ["card"],
+      mode: "payment",
+      success_url: `${origin}/order/success?order_id=${orderId}`,
+      cancel_url: `${origin}/order/failed?order_id=${orderId}`,
+      client_reference_id: req.user._id.toString(),
+      metadata: { orderId },
+      line_items: [
+        {
+          price_data: {
+            currency: "gbp", // adjust if needed
+            product_data: {
+              name: `Order ${orderId}`,
+            },
+            unit_amount: Math.round(totals.total * 100),
+          },
+          quantity: 1,
+        },
+      ],
+    });
+
+    // 6️⃣ Create order (Inside Transaction)
+    // When using transactions, `Order.create` must take an array of documents
+    const createdOrders = await Order.create([{
       user: req.user._id,
       orderId,
       items: totals.orderItems,
@@ -101,20 +119,35 @@ exports.createOrder = async (req, res) => {
       tax: totals.tax,
       shippingCost: totals.shipping,
       totalAmount: totals.total,
-      status: "pending"
-    });
+      status: "pending", 
+      paymentStatus: "pending",
+      stripeSessionId: stripeSession.id,
+    }], { session });
 
-    // 6️⃣ Reduce stock
+    const order = createdOrders[0];
+
+    // 7️⃣ Reduce stock (Inside Transaction)
     for (const item of detailedItems) {
       item.product.availableQuantity -= item.quantity;
-      await item.product.save();
+      await item.product.save({ session });
     }
 
-    res.status(201).json(order);
+    // 8️⃣ Commit transaction
+    await session.commitTransaction();
+    session.endSession();
+
+    // Return the checkout url to redirect the user
+    res.status(201).json({
+      success: true,
+      url: stripeSession.url,
+      order,
+    });
 
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Server error" });
+    await session.abortTransaction();
+    session.endSession();
+    console.error("Order Creation Error:", error);
+    res.status(500).json({ message: "Server error during order creation" });
   }
 };
 
