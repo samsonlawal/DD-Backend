@@ -162,9 +162,10 @@ exports.verifyCode = async (req, res) => {
 
 exports.resetPassword = async (req, res) => {
   try {
-    const { email, code, newPassword } = req.body;
+    const { email, code, newPassword, new_password } = req.body;
+    const finalPassword = newPassword || new_password;
 
-    if (!email || !code || !newPassword) {
+    if (!email || !code || !finalPassword) {
       return res.status(400).json({ message: "Please provide all required fields", success: false });
     }
 
@@ -179,7 +180,7 @@ exports.resetPassword = async (req, res) => {
     }
 
     // Update password (pre-save hook will hash it automatically)
-    user.password = newPassword;
+    user.password = finalPassword;
     user.resetPasswordOTP = undefined;
     user.resetPasswordExpire = undefined;
     await user.save();
