@@ -39,6 +39,12 @@ const orderSchema = new mongoose.Schema(
       },
     ],
 
+    subtotal: {
+      type: Number,
+      required: true,
+      default: 0,
+    },
+
     totalAmount: {
       type: Number,
       required: true,
@@ -59,10 +65,6 @@ const orderSchema = new mongoose.Schema(
       addressLine2: {
         type: String,
       },
-      street: {
-        type: String,
-        required: true,
-      },
       city: {
         type: String,
         required: true,
@@ -79,6 +81,9 @@ const orderSchema = new mongoose.Schema(
         type: String,
         required: true,
       },
+      phone: {
+        type: String,
+      },
     },
 
     shippingCost: {
@@ -89,10 +94,9 @@ const orderSchema = new mongoose.Schema(
     tax: {
       type: Number,
       default: 0,
-      // required: true,
     },
 
-    discount: {
+    couponDiscount: {
       type: Number,
       default: 0,
     },

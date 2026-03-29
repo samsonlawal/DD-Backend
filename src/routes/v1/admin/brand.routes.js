@@ -10,15 +10,15 @@ const {
   deleteBrand,
 } = require("../../../controllers/admin/brand.controller");
 
-const auth = require("../../../middleware/auth.middleware");
-const adminOnly = require("../../../middleware/admin.middleware");
+const adminAuth = require("../../../middleware/adminAuth.middleware");
 
-router.get("/", auth, adminOnly, getBrands);
-router.get("/:id", auth, adminOnly, getBrandById);
+router.get("/", adminAuth, getBrands);
+router.get("/:id", adminAuth, getBrandById);
 
-router.post("/", auth, adminOnly, createBrand);
-router.put("/:id", auth, adminOnly, updateBrand);
-router.put("/:id/deactivate", auth, adminOnly, deactivateBrand);
-router.delete("/:id", auth, adminOnly, deleteBrand);
+router.post("/", adminAuth, createBrand);
+router.put("/:id", adminAuth, updateBrand);
+router.put("/:id/deactivate", adminAuth, deactivateBrand);
+router.delete("/:id", adminAuth, deleteBrand);
 
 module.exports = router;
+

@@ -10,17 +10,15 @@ const {
   deleteTag,
 } = require("../../../controllers/admin/tag.controller");
 
-const auth = require("../../../middleware/auth.middleware");
-const adminOnly = require("../../../middleware/admin.middleware");
+const adminAuth = require("../../../middleware/adminAuth.middleware");
 
-router.get("/", auth, adminOnly, getTags);
-router.get("/:id", auth, adminOnly, getTagById);
+router.get("/", adminAuth, getTags);
+router.get("/:id", adminAuth, getTagById);
 
-router.post("/", auth, adminOnly, createTag);
-router.put("/:id", auth, adminOnly, updateTag);
-router.put("/:id/deactivate", auth, adminOnly, deactivateTag);
-router.delete("/:id", auth, adminOnly, deleteTag);
-
-// router.delete("/:id", auth, adminOnly, deleteTag);
+router.post("/", adminAuth, createTag);
+router.put("/:id", adminAuth, updateTag);
+router.put("/:id/deactivate", adminAuth, deactivateTag);
+router.delete("/:id", adminAuth, deleteTag);
 
 module.exports = router;
+

@@ -10,20 +10,15 @@ const {
   deleteCategory,
 } = require("../../../controllers/admin/category.controller");
 
-const auth = require("../../../middleware/auth.middleware");
-const adminOnly = require("../../../middleware/admin.middleware");
+const adminAuth = require("../../../middleware/adminAuth.middleware");
 
-router.get("/", auth, adminOnly, getCategories);
-router.get("/:id", auth, adminOnly, getCategoryById);
+router.get("/", adminAuth, getCategories);
+router.get("/:id", adminAuth, getCategoryById);
 
-router.post("/", auth, adminOnly, createCategory);
-router.put("/:id", auth, adminOnly, updateCategory);
-router.put("/:id/deactivate", auth, adminOnly, deactivateCategory);
-router.delete("/:id", auth, adminOnly, deleteCategory);
-
-// router.post("/", auth, adminOnly, createCategory);
-// router.put("/:id", auth, adminOnly, updateCategory);
-// router.put("/:id/deactivate", auth, adminOnly, deactivateCategory);
-// router.delete("/:id", auth, adminOnly, deleteCategory);
+router.post("/", adminAuth, createCategory);
+router.put("/:id", adminAuth, updateCategory);
+router.put("/:id/deactivate", adminAuth, deactivateCategory);
+router.delete("/:id", adminAuth, deleteCategory);
 
 module.exports = router;
+

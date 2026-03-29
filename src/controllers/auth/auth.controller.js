@@ -78,6 +78,11 @@ exports.login = async (req, res) => {
 
     const token = createToken({ id: user._id, email: user.email });
 
+    // Guard: prevent admins from logging into the customer store
+    if (user.role === "admin") {
+      return res.status(403).json({ message: "Please use the admin portal to login." });
+    }
+
     res.cookie("token", token, {
       httpOnly: true,
       sameSite: "None",
@@ -90,6 +95,46 @@ exports.login = async (req, res) => {
       token,
       success: true,
       message: "Login Successful",
+    });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+exports.adminLogin = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(401).json({ message: "Invalid credentials" });
+    }
+
+    // Only allow admins to use this endpoint
+    if (user.role !== "admin") {
+      return res.status(403).json({ message: "Access denied. Admin accounts only." });
+    }
+
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(401).json({ message: "Invalid credentials" });
+    }
+
+    const token = createToken({ id: user._id, email: user.email });
+
+    // Use a DIFFERENT cookie name so admin sessions never collide with customer sessions
+    res.cookie("admin_token", token, {
+      httpOnly: true,
+      sameSite: "None",
+      secure: true,
+      maxAge: 1 * 24 * 60 * 60 * 1000,
+    });
+
+    res.status(200).json({
+      user: formattedUser(user),
+      token,
+      success: true,
+      message: "Admin Login Successful",
     });
   } catch (err) {
     res.status(500).json({ message: err.message });

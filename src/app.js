@@ -24,6 +24,7 @@ const adminAuthRoutes = require("./routes/v1/admin/auth.routes");
 const userAuthRoutes = require("./routes/v1/user/auth.routes");
 
 const webhookRoutes = require("./routes/webhook.routes");
+const contactRoutes = require("./routes/v1/contact.routes");
 
 const app = express();
 
@@ -105,6 +106,7 @@ app.use("/api/user/tags", userTagRoutes);
 app.use("/api/user/categories", userCategoryRoutes);
 app.use("/api/user/brands", userBrandRoutes); 
 app.use("/api/user/auth", userAuthRoutes);
+app.use("/api/user/contact", contactRoutes);
 
 
 app.use("/api/admin/orders", adminOrderRoutes);

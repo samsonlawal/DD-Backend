@@ -6,14 +6,14 @@ const {
   updateOrderStatus,
   // deleteOrder,
 } = require("../../../controllers/admin/order.controller");
-const auth = require("../../../middleware/auth.middleware");
-const adminOnly = require("../../../middleware/admin.middleware");
+const adminAuth = require("../../../middleware/adminAuth.middleware");
 const router = express.Router();
 
-router.get("/", auth, adminOnly, getAllOrders);
-router.get("/:id", auth, adminOnly, getOrderById);
-router.get("/user/:userId", auth, adminOnly, getUserOrders);
-router.patch("/:id/status", auth, adminOnly, updateOrderStatus);
-// router.delete("/:id", auth, deleteOrder);
+router.get("/", adminAuth, getAllOrders);
+router.get("/:id", adminAuth, getOrderById);
+router.get("/user/:userId", adminAuth, getUserOrders);
+router.patch("/:id/status", adminAuth, updateOrderStatus);
+// router.delete("/:id", adminAuth, deleteOrder);
+
 
 module.exports = router;

@@ -14,7 +14,7 @@ const transporter = nodemailer.createTransport(
 const sendEmail = async ({ to, subject, html }) => {
   try {
     const info = await transporter.sendMail({
-      from: process.env.ADMIN_EMAIL || "taskstackhq@gmail.com", // update this to your verified SendGrid sender email
+      from: process.env.ADMIN_EMAIL || "support@discountdrinksandmoreltd.co.uk",
       to,
       subject,
       html,

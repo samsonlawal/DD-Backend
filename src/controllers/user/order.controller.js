@@ -153,13 +153,25 @@ exports.createOrder = async (req, res) => {
 
 exports.getOrderById = async (req, res) => {
   try {
-    const order = await Order.findById(req.params.id)
-      .populate("user", "name email phone");
+    const { id } = req.params;
+    let query;
+
+    // Check if the provided id is a valid MongoDB ObjectId
+    if (mongoose.Types.ObjectId.isValid(id)) {
+      query = { _id: id, user: req.user._id };
+    } else {
+      // Otherwise, assume it's the human-readable orderId (e.g., ORD0001)
+      query = { orderId: id, user: req.user._id };
+    }
+
+    const order = await Order.findOne(query)
+      .populate("user", "name email phone")
+      .populate("items.product", "name images price basePrice description brand");
 
     if (!order) {
       return res.status(404).json({
         success: false,
-        message: "Order not found",
+        message: "Order not found or you do not have permission to view it",
       });
     }
 
