@@ -61,7 +61,7 @@ exports.createOrder = async (req, res) => {
 
     // 3️⃣ Define tax + shipping
     const taxRate = 0.05; // 5%
-    const shippingFee = 20; // example flat rate
+    const shippingFee = 0; // Free shipping
 
     // 4️⃣ Calculate totals
     const totals = calculateOrderTotals({
@@ -189,11 +189,26 @@ exports.getOrderById = async (req, res) => {
 
 exports.getUserOrders = async (req, res) => {
   try {
+    const page = parseInt(req.query.page, 10) || 1;
+    const limit = parseInt(req.query.limit, 10) || 10;
+    const skip = (page - 1) * limit;
+
     const orders = await Order.find({ user: req.params.userId })
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit);
+
+    const total = await Order.countDocuments({ user: req.params.userId });
 
     res.status(200).json({
       success: true,
+      count: orders.length,
+      pagination: {
+        total,
+        page,
+        limit,
+        pages: Math.ceil(total / limit),
+      },
       data: orders,
     });
   } catch (error) {

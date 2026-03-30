@@ -2,11 +2,33 @@ const Order = require("../../models/Order");
 
 exports.getAllOrders = async (req, res) => {
   try {
-    const orders = await Order.find()
-      .populate("user", "name email");
+    const page = parseInt(req.query.page, 10) || 1;
+    const limit = parseInt(req.query.limit, 10) || 10;
+    const skip = (page - 1) * limit;
+
+    const { status } = req.query;
+    const filter = {};
+    if (status && status !== "all") {
+      filter.status = status;
+    }
+
+    const orders = await Order.find(filter)
+      .populate("user", "name email")
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit);
+
+    const total = await Order.countDocuments(filter);
 
     res.status(200).json({
       success: true,
+      count: orders.length,
+      pagination: {
+        total,
+        page,
+        limit,
+        pages: Math.ceil(total / limit),
+      },
       data: orders,
     });
   } catch (error) {

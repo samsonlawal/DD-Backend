@@ -18,10 +18,26 @@ const User = require("../../models/User");
 
 exports.getAllUsers = async (req, res) => {
   try {
-    const users = await User.find();
+    const page = parseInt(req.query.page, 10) || 1;
+    const limit = parseInt(req.query.limit, 10) || 10;
+    const skip = (page - 1) * limit;
+
+    const users = await User.find()
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit);
+
+    const total = await User.countDocuments();
 
     res.status(200).json({
       success: true,
+      count: users.length,
+      pagination: {
+        total,
+        page,
+        limit,
+        pages: Math.ceil(total / limit),
+      },
       data: users,
     });
   } catch (error) {

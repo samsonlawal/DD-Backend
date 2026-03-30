@@ -75,6 +75,7 @@ app.use(
       "http://localhost:3001",
       "https://discount-drinks-frontend-git-staging-samsons-projects-c84cc3b1.vercel.app",
       "https://discountdrinksandmoreltd.co.uk",
+      "https://discount-drinks-staging.vercel.app",
 
       "https://discountdrinks.vercel.app",
       "https://discount-drinks-admin.vercel.app",
