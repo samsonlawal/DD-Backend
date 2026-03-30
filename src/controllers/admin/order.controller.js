@@ -61,13 +61,14 @@ exports.getUserOrders = async (req, res) => {
 
 exports.updateOrderStatus = async (req, res) => {
   try {
-    const { status } = req.body;
+    const { status, message } = req.body;
+    const cleanStatus = status?.trim().toLowerCase();
 
-    const order = await Order.findByIdAndUpdate(
-      req.params.id,
-      { status },
-      { new: true, runValidators: true },
-    );
+    // Log the valid enum values currently seen by Mongoose (for debugging)
+    console.log("Valid statuses (from schema):", Order.schema.path("status").options.enum);
+    console.log("Status received:", cleanStatus);
+
+    const order = await Order.findById(req.params.id);
 
     if (!order) {
       return res.status(404).json({
@@ -75,6 +76,18 @@ exports.updateOrderStatus = async (req, res) => {
         message: "Order not found",
       });
     }
+
+    // Update current status
+    order.status = cleanStatus;
+
+    // Push to status history for the timeline
+    order.statusHistory.push({
+      status: cleanStatus,
+      timestamp: new Date(),
+      message: message || `Order status updated to ${cleanStatus}`,
+    });
+
+    await order.save();
 
     res.status(200).json({
       success: true,
