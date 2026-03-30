@@ -33,6 +33,15 @@ const userSchema = new mongoose.Schema(
       trim: true,
     },
 
+    dob: {
+      type: Date,
+    },
+
+    gender: {
+      type: String,
+      enum: ["male", "female", "non-binary", "other", "prefer not to say"],
+    },
+
     addresses: [{
       addressLine1: String,
       addressLine2: String,
