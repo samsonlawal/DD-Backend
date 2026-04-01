@@ -1,6 +1,16 @@
 const Order = require("../../models/Order");
 const { sendOrderProgressEmail } = require("../../utils/email");
 
+// Statuses that should trigger a customer notification email
+const NOTIFIABLE_STATUSES = new Set([
+  "processing",
+  "dispatched",
+  "shipped",
+  "on its way",
+  "delivered",
+  "cancelled",
+]);
+
 exports.getAllOrders = async (req, res) => {
   try {
     const page = parseInt(req.query.page, 10) || 1;
@@ -33,10 +43,7 @@ exports.getAllOrders = async (req, res) => {
       data: orders,
     });
   } catch (error) {
-    res.status(400).json({
-      success: false,
-      message: error.message,
-    });
+    res.status(400).json({ success: false, message: error.message });
   }
 };
 
@@ -47,38 +54,22 @@ exports.getOrderById = async (req, res) => {
       .populate("items.product", "name images price basePrice description brand");
 
     if (!order) {
-      return res.status(404).json({
-        success: false,
-        message: "Order not found",
-      });
+      return res.status(404).json({ success: false, message: "Order not found" });
     }
 
-    res.status(200).json({
-      success: true,
-      data: order,
-    });
+    res.status(200).json({ success: true, data: order });
   } catch (error) {
-    res.status(400).json({
-      success: false,
-      message: error.message,
-    });
+    res.status(400).json({ success: false, message: error.message });
   }
 };
 
 exports.getUserOrders = async (req, res) => {
   try {
-    const orders = await Order.find({ user: req.params.userId })
-      .sort({ createdAt: -1 });
+    const orders = await Order.find({ user: req.params.userId }).sort({ createdAt: -1 });
 
-    res.status(200).json({
-      success: true,
-      data: orders,
-    });
+    res.status(200).json({ success: true, data: orders });
   } catch (error) {
-    res.status(400).json({
-      success: false,
-      message: error.message,
-    });
+    res.status(400).json({ success: false, message: error.message });
   }
 };
 
@@ -87,23 +78,29 @@ exports.updateOrderStatus = async (req, res) => {
     const { status, message } = req.body;
     const cleanStatus = status?.trim().toLowerCase();
 
-    // Log the valid enum values currently seen by Mongoose (for debugging)
-    console.log("Valid statuses (from schema):", Order.schema.path("status").options.enum);
-    console.log("Status received:", cleanStatus);
+    if (!cleanStatus) {
+      return res.status(400).json({ success: false, message: "Status is required" });
+    }
+
+    // Validate against schema enum
+    const validStatuses = Order.schema.path("status").options.enum;
+    if (!validStatuses.includes(cleanStatus)) {
+      return res.status(400).json({
+        success: false,
+        message: `Invalid status "${cleanStatus}". Valid values: ${validStatuses.join(", ")}`,
+      });
+    }
 
     const order = await Order.findById(req.params.id).populate("user", "name email");
 
     if (!order) {
-      return res.status(404).json({
-        success: false,
-        message: "Order not found",
-      });
+      return res.status(404).json({ success: false, message: "Order not found" });
     }
 
-    // Update current status
+    // Update status
     order.status = cleanStatus;
 
-    // Push to status history for the timeline
+    // Record in history
     order.statusHistory.push({
       status: cleanStatus,
       timestamp: new Date(),
@@ -112,49 +109,27 @@ exports.updateOrderStatus = async (req, res) => {
 
     await order.save();
 
-    // Send order progress email
-    if (order.user && order.user.email) {
-      sendOrderProgressEmail(order.user.email, order.user.name, order.orderId, cleanStatus, message).catch(console.error);
+    console.log(`✅ Order ${order.orderId} status updated to "${cleanStatus}"`);
+
+    // Send customer notification for key delivery milestones
+    if (NOTIFIABLE_STATUSES.has(cleanStatus) && order.user?.email) {
+      sendOrderProgressEmail(
+        order.user.email,
+        order.user.name,
+        order.orderId,
+        cleanStatus,
+        message
+      ).catch((err) =>
+        console.error(
+          `❌ Failed to send progress email for ${order.orderId} (${cleanStatus}):`,
+          err.message
+        )
+      );
     }
 
-    res.status(200).json({
-      success: true,
-      data: order,
-    });
+    res.status(200).json({ success: true, data: order });
   } catch (error) {
-    res.status(400).json({
-      success: false,
-      message: error.message,
-    });
+    console.error("updateOrderStatus error:", error);
+    res.status(400).json({ success: false, message: error.message });
   }
 };
-
-// exports.deleteOrder = async (req, res) => {
-//   try {
-//     const order = await Order.findByIdAndDelete(req.params.id);
-
-//     if (!order) {
-//       return res.status(404).json({
-//         success: false,
-//         message: "Order not found",
-//       });
-//     }
-
-//     res.status(200).json({
-//       success: true,
-//       message: "Order deleted successfully",
-//     });
-//   } catch (error) {
-//     res.status(400).json({
-//       success: false,
-//       message: error.message,
-//     });
-//   }
-// };
-
-// What's missing:
-
-// Payment provider logic
-// Stock decrement
-// Webhooks
-// Order cancellation rules

@@ -1,10 +1,16 @@
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 const Order = require("../models/Order");
 const Product = require("../models/Product");
-const { sendOrderProgressEmail } = require("../utils/email");
+const { sendOrderSuccessEmail } = require("../utils/email");
 
 exports.handleStripeWebhook = async (req, res) => {
+  console.log("🔔 Stripe Webhook Received!");
   const sig = req.headers["stripe-signature"];
+  
+  if (!sig) {
+    console.warn("⚠️ Webhook received without stripe-signature header!");
+  }
+
   let event;
 
   try {
@@ -13,35 +19,52 @@ exports.handleStripeWebhook = async (req, res) => {
       sig,
       process.env.STRIPE_WEBHOOK_SECRET
     );
+    console.log(`✅ Webhook verified: ${event.type}`);
   } catch (err) {
-    console.error(`Webhook signature verification failed: ${err.message}`);
+    console.error(`❌ Webhook signature verification failed: ${err.message}`);
+    console.log("Check if STRIPE_WEBHOOK_SECRET in .env matches your Stripe CLI/Dashboard secret.");
     return res.status(400).send(`Webhook Error: ${err.message}`);
   }
 
-    try {
+  try {
     switch (event.type) {
       case "checkout.session.completed": {
         const session = event.data.object;
-        
-        // Find order by the metadata we passed
         const orderId = session.metadata.orderId;
-        
+
         if (session.payment_status === "paid" && orderId) {
+          // Populate user + items so the receipt email has full details
           const paidOrder = await Order.findOneAndUpdate(
             { orderId },
-            { paymentStatus: "paid", status: "processing" },
+            {
+              paymentStatus: "paid",
+              status: "processing",
+              $push: {
+                statusHistory: {
+                  status: "processing",
+                  timestamp: new Date(),
+                  message: "Payment confirmed. Order is now being processed.",
+                },
+              },
+            },
             { new: true }
-          ).populate("user", "name email");
+          )
+            .populate("user", "name email")
+            .populate("items.product", "name images");
+
           if (paidOrder) {
-            console.log(`Order ${paidOrder.orderId} successfully paid!`);
-            if (paidOrder.user && paidOrder.user.email) {
-              sendOrderProgressEmail(paidOrder.user.email, paidOrder.user.name, paidOrder.orderId, "payment confirmed").catch(console.error);
-            }
+            console.log(`✅ Order ${paidOrder.orderId} successfully paid. Sending confirmation email...`);
+            // Fire-and-forget — don't block the webhook response
+            sendOrderSuccessEmail(paidOrder).catch((err) =>
+              console.error(`❌ Failed to send order success email for ${paidOrder.orderId}:`, err.message)
+            );
+          } else {
+            console.warn(`⚠️ Webhook: Order not found for orderId=${orderId}`);
           }
         }
         break;
       }
-      
+
       case "checkout.session.expired": {
         const session = event.data.object;
         const orderId = session.metadata.orderId;
@@ -49,7 +72,17 @@ exports.handleStripeWebhook = async (req, res) => {
         if (orderId) {
           const failedOrder = await Order.findOneAndUpdate(
             { orderId },
-            { paymentStatus: "failed", status: "cancelled" },
+            {
+              paymentStatus: "failed",
+              status: "cancelled",
+              $push: {
+                statusHistory: {
+                  status: "cancelled",
+                  timestamp: new Date(),
+                  message: "Checkout session expired. Order cancelled and stock restored.",
+                },
+              },
+            },
             { new: true }
           );
 
@@ -57,17 +90,17 @@ exports.handleStripeWebhook = async (req, res) => {
             // Restore stock
             for (const item of failedOrder.items) {
               await Product.findByIdAndUpdate(item.product, {
-                 $inc: { availableQuantity: item.quantity }
+                $inc: { availableQuantity: item.quantity },
               });
             }
-            console.log(`Checkout expired for Order ${failedOrder.orderId}. Order cancelled and stock restored.`);
+            console.log(`Order ${failedOrder.orderId} expired. Stock restored.`);
           }
         }
         break;
       }
-      
+
       default:
-        console.log(`Unhandled event type ${event.type}`);
+        console.log(`Unhandled Stripe event: ${event.type}`);
     }
 
     res.json({ received: true });

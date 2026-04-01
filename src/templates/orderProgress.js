@@ -1,133 +1,144 @@
 const layout = require("./layout");
 
 const orderProgressTemplate = (name, orderId, status, message) => {
-  let humanFriendlyStatus = status;
-  let descriptionText = "We wanted to let you know about an update to your order.";
+  const s = (status || "").toLowerCase().trim();
 
-  switch (status.toLowerCase()) {
-    case "payment confirmed":
-      humanFriendlyStatus = "Payment Confirmed";
-      descriptionText = "Great news! We have successfully received your payment. Your order is now being processed.";
-      break;
-    case "processing":
-      humanFriendlyStatus = "Processing";
-      descriptionText = "Your order is currently being prepared and packed in our warehouse.";
-      break;
-    case "dispatched":
-    case "shipped":
-      humanFriendlyStatus = "Shipped";
-      descriptionText = "Your order has been shipped and is on its way to you!";
-      break;
-    case "delivered":
-      humanFriendlyStatus = "Delivered";
-      descriptionText = "Your order has been successfully delivered. We hope you enjoy your drinks!";
-      break;
-    case "cancelled":
-      humanFriendlyStatus = "Cancelled";
-      descriptionText = "Your order has been cancelled.";
-      break;
-    default:
-      humanFriendlyStatus = status.charAt(0).toUpperCase() + status.slice(1);
-  }
+  // Map every status to icon + colour + description
+  const statusConfig = {
+    "processing": {
+      icon: "⚙️",
+      label: "Processing",
+      color: "#f59e0b",
+      description: "Your order is being picked and packed in our warehouse. We'll update you as soon as it's on its way.",
+    },
+    "dispatched": {
+      icon: "📦",
+      label: "Dispatched",
+      color: "#3b82f6",
+      description: "Great news! Your order has left our warehouse and is now with the courier.",
+    },
+    "shipped": {
+      icon: "📦",
+      label: "Dispatched",
+      color: "#3b82f6",
+      description: "Great news! Your order has been dispatched and is heading your way.",
+    },
+    "on its way": {
+      icon: "🚚",
+      label: "On Its Way",
+      color: "#8b5cf6",
+      description: "Your delivery is on its way to you right now! Make sure someone is available to receive it.",
+    },
+    "delivered": {
+      icon: "✅",
+      label: "Delivered",
+      color: "#10b981",
+      description: "Your order has been successfully delivered. We hope you enjoy your drinks! If anything is missing or damaged, please contact us.",
+    },
+    "cancelled": {
+      icon: "❌",
+      label: "Cancelled",
+      color: "#ef4444",
+      description: "Your order has been cancelled. If you believe this is a mistake or need a refund, please contact our support team.",
+    },
+    "payment confirmed": {
+      icon: "💳",
+      label: "Payment Confirmed",
+      color: "#10b981",
+      description: "We have successfully received your payment. Your order is now being prepared.",
+    },
+  };
+
+  const cfg = statusConfig[s] || {
+    icon: "📋",
+    label: status.charAt(0).toUpperCase() + status.slice(1),
+    color: "#345c72",
+    description: "We wanted to let you know about an update to your order.",
+  };
 
   const content = `
     <tr>
-      <td style="padding-bottom: 24px">
-        <h5 style="font-size: 24px; margin: 0">
+      <td style="padding-bottom: 20px;">
+        <h5 style="font-size: 22px; margin: 0; color: #111111;">
           Hello ${name},
         </h5>
       </td>
     </tr>
 
     <tr>
-      <td style="text-align: left; padding-bottom: 24px">
-        <p
-          style="
-            font-size: 16px;
-            margin: 0;
-            line-height: 24px;
-          "
-        >
-          There has been an update regarding your order:
+      <td style="text-align: left; padding-bottom: 24px;">
+        <p style="font-size: 16px; margin: 0; line-height: 24px; color: #4e4e4e;">
+          There's an update on your order:
           <br />
-          <strong style="font-size: 18px;">Order #${orderId}</strong>
+          <strong style="font-size: 17px; color: #111111;">Order #${orderId}</strong>
         </p>
       </td>
     </tr>
 
     <tr>
-      <td style="padding-bottom: 24px">
-        <h4
+      <td style="padding-bottom: 24px;">
+        <table
+          cellpadding="0"
+          cellspacing="0"
+          border="0"
           style="
-            color: #111111;
-            margin: 0;
-            font-size: 20px;
-            padding: 12px;
-            border: 2px solid #e7e7e7;
+            border-left: 4px solid ${cfg.color};
             background-color: #f9f9f9;
-            width: fit-content;
-            border-radius: 8px;
+            border-radius: 0 8px 8px 0;
+            padding: 16px 20px;
+            width: 100%;
           "
         >
-          Status: <span style="color: #345c72;">${humanFriendlyStatus}</span>
-        </h4>
+          <tr>
+            <td>
+              <p style="margin: 0 0 4px 0; font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em; color: #888888; font-weight: bold;">
+                Order Status
+              </p>
+              <p style="margin: 0; font-size: 20px; font-weight: bold; color: ${cfg.color};">
+                ${cfg.icon}&nbsp; ${cfg.label}
+              </p>
+            </td>
+          </tr>
+        </table>
       </td>
     </tr>
 
     <tr>
-      <td style="text-align: left; padding-bottom: 24px">
-        <p
-          style="
-            font-size: 16px;
-            margin: 0;
-            line-height: 24px;
-            padding: 15px;
-            background-color: #f1f1f1;
-            border-left: 4px solid #345c72;
-          "
-        >
-           ${message ? message : descriptionText}
+      <td style="text-align: left; padding-bottom: 28px;">
+        <p style="font-size: 15px; margin: 0; line-height: 24px; color: #4e4e4e;">
+          ${message ? message : cfg.description}
         </p>
       </td>
     </tr>
 
     <tr>
-      <td
-        align="center"
-        style="
-          background-color: #111111;
-          padding: 12px 24px;
-          border-radius: 100px;
-          display: inline-block;
-          margin-bottom: 24px;
-        "
-      >
+      <td align="left" style="padding-bottom: 24px;">
         <a
           href="https://discountdrinksandmoreltd.co.uk/user/orders/${orderId}"
           target="_blank"
           style="
+            background-color: #111111;
             color: #ffffff;
+            padding: 14px 28px;
             text-decoration: none;
-            font-weight: 500;
-            margin: 0;
-            font-size: 16px;
+            border-radius: 100px;
+            font-weight: bold;
+            font-size: 15px;
+            display: inline-block;
           "
         >
-          View Order Details
+          View Order Details →
         </a>
       </td>
     </tr>
 
     <tr>
       <td style="text-align: left;">
-        <p
-          style="
-            font-size: 16px;
-            margin: 0;
-            line-height: 24px;
-          "
-        >
-          If you have any questions, feel free to contact us.
+        <p style="font-size: 14px; margin: 0; line-height: 22px; color: #888888;">
+          If you have any questions about your order, reply to this email or contact us at
+          <a href="mailto:support@discountdrinksandmoreltd.co.uk" style="color: #345c72; text-decoration: none;">
+            support@discountdrinksandmoreltd.co.uk
+          </a>.
         </p>
       </td>
     </tr>

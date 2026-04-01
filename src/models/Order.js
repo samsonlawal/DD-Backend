@@ -59,6 +59,7 @@ const orderSchema = new mongoose.Schema(
         "processing",
         "dispatched",
         "shipped",
+        "on its way",
         "delivered",
         "cancelled",
       ],
