@@ -1,6 +1,7 @@
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 const Order = require("../models/Order");
 const Product = require("../models/Product");
+const { sendOrderProgressEmail } = require("../utils/email");
 
 exports.handleStripeWebhook = async (req, res) => {
   const sig = req.headers["stripe-signature"];
@@ -30,9 +31,12 @@ exports.handleStripeWebhook = async (req, res) => {
             { orderId },
             { paymentStatus: "paid", status: "processing" },
             { new: true }
-          );
+          ).populate("user", "name email");
           if (paidOrder) {
             console.log(`Order ${paidOrder.orderId} successfully paid!`);
+            if (paidOrder.user && paidOrder.user.email) {
+              sendOrderProgressEmail(paidOrder.user.email, paidOrder.user.name, paidOrder.orderId, "payment confirmed").catch(console.error);
+            }
           }
         }
         break;

@@ -1,6 +1,11 @@
 const nodemailer = require("nodemailer");
 const sendgridTransport = require("nodemailer-sendgrid-transport");
 
+const welcomeTemplate = require("../templates/welcome");
+const passwordResetOTPTemplate = require("../templates/passwordResetOTP");
+const passwordResetSuccessTemplate = require("../templates/passwordResetSuccess");
+const orderProgressTemplate = require("../templates/orderProgress");
+
 // Configure SendGrid Transport
 const transporter = nodemailer.createTransport(
   sendgridTransport({
@@ -11,11 +16,17 @@ const transporter = nodemailer.createTransport(
 );
 
 // Generic email sender
-const sendEmail = async ({ to, subject, html }) => {
+const sendEmail = async ({ to, name, subject, html }) => {
   try {
+    const fromAddress = process.env.ADMIN_EMAIL || "support@discountdrinksandmoreltd.co.uk";
+    
+    // Format the recipient so their email client prominently displays their name!
+    const recipient = name ? `"${name}" <${to}>` : to;
+    
     const info = await transporter.sendMail({
-      from: process.env.ADMIN_EMAIL || "support@discountdrinksandmoreltd.co.uk",
-      to,
+      from: `"Discount Drinks" <${fromAddress}>`,
+      replyTo: "no-reply@discountdrinksandmoreltd.co.uk",
+      to: recipient,
       subject,
       html,
     });
@@ -31,52 +42,26 @@ const sendEmail = async ({ to, subject, html }) => {
 
 const sendWelcomeEmail = async (email, name) => {
   const subject = "Welcome to Discount Drinks!";
-  const html = `
-    <div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
-      <h2>Welcome, ${name}! 🎉</h2>
-      <p>Thank you for signing up to Discount Drinks.</p>
-      <p>We are thrilled to have you on board. Start exploring our wide selection of drinks at the best prices.</p>
-      <br />
-      <p>Cheers,</p>
-      <p><strong>The Discount Drinks Team</strong></p>
-    </div>
-  `;
-  return sendEmail({ to: email, subject, html });
+  const html = welcomeTemplate(name);
+  return sendEmail({ to: email, name, subject, html });
 };
 
 const sendPasswordResetOTP = async (email, name, otpCode) => {
   const subject = "Your Password Reset Code";
-  const html = `
-    <div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
-      <h2>Password Reset Request</h2>
-      <p>Hi ${name},</p>
-      <p>We received a request to reset your password. Here is your 6-digit verification code:</p>
-      <div style="margin: 20px 0; font-size: 24px; font-weight: bold; letter-spacing: 5px; color: #d9534f;">
-        ${otpCode}
-      </div>
-      <p>This code will expire in 10 minutes. If you did not request this, please ignore this email.</p>
-      <br />
-      <p>Thank you,</p>
-      <p><strong>The Discount Drinks Team</strong></p>
-    </div>
-  `;
-  return sendEmail({ to: email, subject, html });
+  const html = passwordResetOTPTemplate(name, otpCode);
+  return sendEmail({ to: email, name, subject, html });
 };
 
 const sendPasswordResetSuccess = async (email, name) => {
   const subject = "Password Reset Successful";
-  const html = `
-    <div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
-      <h2>Password Reset Complete</h2>
-      <p>Hi ${name},</p>
-      <p>Your password has been successfully reset. You can now log in using your new password.</p>
-      <p>If you did not perform this action, please contact our support immediately.</p>
-      <br />
-      <p>Best Regards,</p>
-      <p><strong>The Discount Drinks Team</strong></p>
-    </div>
-  `;
-  return sendEmail({ to: email, subject, html });
+  const html = passwordResetSuccessTemplate(name);
+  return sendEmail({ to: email, name, subject, html });
+};
+
+const sendOrderProgressEmail = async (email, name, orderId, status, message) => {
+  const subject = `Update on your Discount Drinks Order #${orderId}`;
+  const html = orderProgressTemplate(name, orderId, status, message);
+  return sendEmail({ to: email, name, subject, html });
 };
 
 module.exports = {
@@ -84,4 +69,5 @@ module.exports = {
   sendWelcomeEmail,
   sendPasswordResetOTP,
   sendPasswordResetSuccess,
+  sendOrderProgressEmail,
 };

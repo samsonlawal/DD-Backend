@@ -85,9 +85,13 @@ exports.createOrder = async (req, res) => {
     // 5️⃣ Create Stripe Checkout Session
     const origin = req.headers.origin || process.env.CLIENT_URL || "http://localhost:3000";
 
+    // Expire checkout session after 30 minutes (minimum allowed by Stripe) to prevent locking up stock
+    const expiresAt = Math.floor(Date.now() / 1000) + (30 * 60);
+
     const stripeSession = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
       mode: "payment",
+      expires_at: expiresAt,
       success_url: `${origin}/order/success?order_id=${orderId}`,
       cancel_url: `${origin}/order/failed?order_id=${orderId}`,
       client_reference_id: req.user._id.toString(),

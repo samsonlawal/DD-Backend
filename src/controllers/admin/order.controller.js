@@ -1,4 +1,5 @@
 const Order = require("../../models/Order");
+const { sendOrderProgressEmail } = require("../../utils/email");
 
 exports.getAllOrders = async (req, res) => {
   try {
@@ -90,7 +91,7 @@ exports.updateOrderStatus = async (req, res) => {
     console.log("Valid statuses (from schema):", Order.schema.path("status").options.enum);
     console.log("Status received:", cleanStatus);
 
-    const order = await Order.findById(req.params.id);
+    const order = await Order.findById(req.params.id).populate("user", "name email");
 
     if (!order) {
       return res.status(404).json({
@@ -110,6 +111,11 @@ exports.updateOrderStatus = async (req, res) => {
     });
 
     await order.save();
+
+    // Send order progress email
+    if (order.user && order.user.email) {
+      sendOrderProgressEmail(order.user.email, order.user.name, order.orderId, cleanStatus, message).catch(console.error);
+    }
 
     res.status(200).json({
       success: true,
