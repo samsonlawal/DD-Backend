@@ -60,7 +60,7 @@ exports.createOrder = async (req, res) => {
     }
 
     // 3️⃣ Define tax + shipping
-    const taxRate = 0.05; // 5%
+    const taxRate = 0; // 5%
     const shippingFee = 0; // Free shipping
 
     // 4️⃣ Calculate totals
