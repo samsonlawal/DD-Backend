@@ -5,7 +5,7 @@ function calculateOrderTotals({ items, taxRate = 0, shippingFee = 0, coupon }) {
 
     for (const item of items) {
         const {product, quantity, image} = item;
-        const price = product.basePrice || 0; // The Product model uses basePrice, not price
+        const price = product.costPrice || 0; // The Product model now uses costPrice for total calculation
         const discount = product.discountPercentage || 0;
 
         const discountedUnitPrice = price - (price * discount) / 100;

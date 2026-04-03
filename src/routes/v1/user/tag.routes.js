@@ -1,5 +1,8 @@
 const express = require("express");
 const router = express.Router();
+const validate = require("../../../middleware/validation.middleware");
+const { mongoId } = require("../../../validations/admin.validation");
+const Joi = require("joi");
 
 const {
   getTags,
@@ -7,6 +10,6 @@ const {
 } = require("../../../controllers/user/tag.controller");
 
 router.get("/", getTags);
-router.get("/:id", getTagById);
+router.get("/:id", validate(Joi.object({ id: mongoId }), "params"), getTagById);
 
 module.exports = router;

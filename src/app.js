@@ -104,8 +104,6 @@ app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 app.use(helmet());
 app.use(xssCleaner);
 
-// adminPassword@123
-// admin@discountdrinks.com
 
 app.use("/api/user/orders", userOrderRoutes);
 app.use("/api/user/products", userProductRoutes);

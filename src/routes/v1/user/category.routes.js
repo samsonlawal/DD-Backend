@@ -1,5 +1,8 @@
 const express = require("express");
 const router = express.Router();
+const validate = require("../../../middleware/validation.middleware");
+const { mongoId } = require("../../../validations/admin.validation");
+const Joi = require("joi");
 
 const {
   getCategories,
@@ -7,6 +10,6 @@ const {
 } = require("../../../controllers/user/category.controller");
 
 router.get("/", getCategories);
-router.get("/:id", getCategoryById);
+router.get("/:id", validate(Joi.object({ id: mongoId }), "params"), getCategoryById);
 
 module.exports = router;

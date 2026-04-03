@@ -4,11 +4,14 @@ const {
   getOrderById,
   getUserOrders,
 } = require("../../../controllers/user/order.controller");
+const validate = require("../../../middleware/validation.middleware");
+const { checkoutSchema, mongoId } = require("../../../validations/user.validation");
+const Joi = require("joi");
 const auth = require("../../../middleware/auth.middleware");
 const router = express.Router();
 
-router.post("/", auth, createOrder);
-router.get("/:id", auth, getOrderById);
-router.get("/user/:userId", auth, getUserOrders);
+router.post("/", auth, validate(checkoutSchema), createOrder);
+router.get("/:id", auth, validate(Joi.object({ id: mongoId }), "params"), getOrderById);
+router.get("/user/:userId", auth, validate(Joi.object({ userId: mongoId }), "params"), getUserOrders);
 
 module.exports = router;

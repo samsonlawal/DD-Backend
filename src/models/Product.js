@@ -92,6 +92,38 @@ const productSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
+    toJSON: {
+      virtuals: true,
+      transform: (doc, ret) => {
+        // ABV Unit Format
+        if (ret.specifications?.abv) {
+          const abv = ret.specifications.abv.toString().trim();
+          if (!abv.endsWith("%")) {
+            ret.specifications.abv = `${abv} %`;
+          }
+        }
+        
+        // Volume Unit Format
+        if (ret.specifications?.volume) {
+          const vol = ret.specifications.volume.toString().trim();
+          if (!vol.toLowerCase().endsWith("cl") && !vol.toLowerCase().endsWith("ml") && !vol.toLowerCase().endsWith("l")) {
+            ret.specifications.volume = `${vol} cl`;
+          }
+        }
+
+        // Shipping Weight Unit Format
+        if (ret.shippingWeight !== undefined && ret.shippingWeight !== null) {
+          const weight = ret.shippingWeight.toString().trim();
+          if (!weight.toLowerCase().endsWith("kg") && !weight.toLowerCase().endsWith("g")) {
+            ret.shippingWeight = `${weight} kg`;
+          }
+        }
+
+        delete ret.__v;
+        return ret;
+      }
+    },
+    toObject: { virtuals: true }
   },
 );
 
