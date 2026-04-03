@@ -1,6 +1,8 @@
 const express = require("express");
 const cookieParser = require("cookie-parser");
 const cors = require("cors");
+const helmet = require("helmet");
+const xssCleaner = require("./middleware/sanitization.middleware");
 
 const userOrderRoutes = require("./routes/v1/user/order.routes");
 const adminOrderRoutes = require("./routes/v1/admin/order.routes");
@@ -97,6 +99,10 @@ app.use("/api/webhooks", webhookRoutes);
 
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
+
+// Security middlewares
+app.use(helmet());
+app.use(xssCleaner);
 
 // adminPassword@123
 // admin@discountdrinks.com

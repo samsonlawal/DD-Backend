@@ -170,7 +170,7 @@ exports.getOrderById = async (req, res) => {
 
     const order = await Order.findOne(query)
       .populate("user", "name email phone")
-      .populate("items.product", "name images price basePrice description brand");
+      .populate("items.product", "name images price basePrice costPrice description brand");
 
     if (!order) {
       return res.status(404).json({

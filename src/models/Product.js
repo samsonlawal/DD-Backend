@@ -44,6 +44,7 @@ const productSchema = new mongoose.Schema(
     },
     costPrice: {
       type: Number,
+      required: true,
       min: 0,
     },
     availableQuantity: {
