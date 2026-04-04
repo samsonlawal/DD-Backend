@@ -127,6 +127,14 @@ const productSchema = new mongoose.Schema(
   },
 );
 
+// Compound Index for default sorting and status filtering
+productSchema.index({ status: 1, createdAt: -1 });
+
+// Search Field Indexes
+productSchema.index({ category: 1 });
+productSchema.index({ brand: 1 });
+productSchema.index({ tags: 1 });
+
 // Virtual to sync isActive with status
 productSchema.virtual("activeStatus").get(function () {
   return this.status === "active";

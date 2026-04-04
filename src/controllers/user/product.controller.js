@@ -1,4 +1,5 @@
 const Product = require("../../models/Product");
+const { formatProduct, formatProducts } = require("../../utils/productFormatter");
 
 exports.getProducts = async (req, res) => {
   try {
@@ -9,9 +10,9 @@ exports.getProducts = async (req, res) => {
     const { category, brand, subCategory, minPrice, maxPrice, tags } = req.query;
     const filter = { status: "active" };
 
-    if (category && category !== "") filter.category = { $regex: category, $options: "i" };
-    if (brand && brand !== "") filter.brand = { $regex: brand, $options: "i" };
-    if (subCategory && subCategory !== "") filter.subCategory = { $regex: subCategory, $options: "i" };
+    if (category && category !== "") filter.category = category;
+    if (brand && brand !== "") filter.brand = brand;
+    if (subCategory && subCategory !== "") filter.subCategory = subCategory;
 
     // Price Filtering
     if (minPrice !== undefined || maxPrice !== undefined) {
@@ -27,7 +28,8 @@ exports.getProducts = async (req, res) => {
     }
 
     const products = await Product.find(filter)
-      .sort({ createdAt: -1 })
+      .select("name basePrice costPrice images status badge tags") // Only fields needed for listing
+      .sort({ status: 1, createdAt: -1 })
       .skip(skip)
       .limit(limit)
       .lean();
@@ -43,7 +45,7 @@ exports.getProducts = async (req, res) => {
         limit,
         pages: Math.ceil(total / limit),
       },
-      data: products,
+      data: formatProducts(products),
     });
   } catch (error) {
     res.status(500).json({
@@ -53,9 +55,35 @@ exports.getProducts = async (req, res) => {
   }
 };
 
+exports.getBestSellers = async (req, res) => {
+  try {
+    const products = await Product.find({
+      status: "active",
+      tags: { $in: [/^best seller$/i] },
+    })
+      .select("name basePrice costPrice images status badge tags")
+      .sort({ createdAt: -1 })
+      .limit(10)
+      .lean();
+
+    res.status(200).json({
+      success: true,
+      count: products.length,
+      data: formatProducts(products),
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch best sellers",
+    });
+  }
+};
+
 exports.getProductById = async (req, res) => {
   try {
-    const product = await Product.findById(req.params.id);
+    const product = await Product.findById(req.params.id)
+      .select("name brand category subCategory description basePrice costPrice images specifications availableQuantity lowStockThreshold badge tags shippingWeight dimensions status")
+      .lean();
 
     if (!product) {
       return res.status(404).json({
@@ -66,7 +94,7 @@ exports.getProductById = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      data: product,
+      data: formatProduct(product),
     });
   } catch (error) {
     res.status(500).json({

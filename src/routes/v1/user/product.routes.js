@@ -1,6 +1,7 @@
 const express = require("express");
 const {
   getProducts,
+  getBestSellers,
   getProductById,
 } = require("../../../controllers/user/product.controller");
 const validate = require("../../../middleware/validation.middleware");
@@ -21,6 +22,9 @@ router.get("/", validate(Joi.object({
   maxPrice: Joi.number().min(0),
   tags: Joi.string().allow(""),
 }), "query"), getProducts);
+
+router.get("/best-seller", getBestSellers);
+
 router.get("/:id", validate(Joi.object({ id: mongoId }), "params"), getProductById);
 
 module.exports = router;
