@@ -14,9 +14,12 @@ const router = express.Router();
 router.get("/", validate(Joi.object({
   page: Joi.number().integer().min(1).default(1),
   limit: Joi.number().integer().min(1).max(100).default(20),
-  category: mongoId,
-  brand: mongoId,
-  subCategory: Joi.string().trim(),
+  category: Joi.string().allow(""),
+  brand: Joi.string().allow(""),
+  subCategory: Joi.string().allow(""),
+  minPrice: Joi.number().min(0),
+  maxPrice: Joi.number().min(0),
+  tags: Joi.string().allow(""),
 }), "query"), getProducts);
 router.get("/:id", validate(Joi.object({ id: mongoId }), "params"), getProductById);
 

@@ -6,12 +6,25 @@ exports.getProducts = async (req, res) => {
     const limit = parseInt(req.query.limit, 10) || 20;
     const skip = (page - 1) * limit;
 
-    const { category, brand, subCategory } = req.query;
+    const { category, brand, subCategory, minPrice, maxPrice, tags } = req.query;
     const filter = { status: "active" };
 
     if (category && category !== "") filter.category = { $regex: category, $options: "i" };
     if (brand && brand !== "") filter.brand = { $regex: brand, $options: "i" };
     if (subCategory && subCategory !== "") filter.subCategory = { $regex: subCategory, $options: "i" };
+
+    // Price Filtering
+    if (minPrice !== undefined || maxPrice !== undefined) {
+      filter.basePrice = {};
+      if (minPrice !== undefined) filter.basePrice.$gte = parseFloat(minPrice);
+      if (maxPrice !== undefined) filter.basePrice.$lte = parseFloat(maxPrice);
+    }
+
+    // Tag Filtering (expects comma-separated string or single string)
+    if (tags && tags !== "") {
+      const tagArray = tags.split(",").map(t => t.trim());
+      filter.tags = { $in: tagArray };
+    }
 
     const products = await Product.find(filter)
       .sort({ createdAt: -1 })
