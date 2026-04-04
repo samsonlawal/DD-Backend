@@ -28,7 +28,8 @@ const checkoutSchema = Joi.object({
   items: Joi.array().items(Joi.object({
     product: mongoId.required(),
     quantity: Joi.number().integer().min(1).required(),
-    price: Joi.number().min(0).required(),
+    image: Joi.string().allow(""),
+    name: Joi.string().allow(""),
   })).min(1).required(),
   couponCode: Joi.string().allow("").trim().max(50),
   paymentMethod: Joi.string().valid("card", "cod").required(),
