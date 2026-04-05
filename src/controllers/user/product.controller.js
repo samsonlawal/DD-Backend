@@ -27,14 +27,16 @@ exports.getProducts = async (req, res) => {
       filter.tags = { $in: tagArray };
     }
 
-    const products = await Product.find(filter)
-      .select("name basePrice costPrice images status badge tags") // Only fields needed for listing
-      .sort({ status: 1, createdAt: -1 })
-      .skip(skip)
-      .limit(limit)
-      .lean();
-
-    const total = await Product.countDocuments(filter);
+    const [products, total] = await Promise.all([
+      Product.find(filter)
+        .select("name basePrice costPrice images status badge tags")
+        .sort({ status: 1, createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .lean()
+        .maxTimeMS(5000),
+      Product.countDocuments(filter).maxTimeMS(5000),
+    ]);
 
     res.status(200).json({
       success: true,
@@ -59,12 +61,13 @@ exports.getBestSellers = async (req, res) => {
   try {
     const products = await Product.find({
       status: "active",
-      tags: { $in: [/^best seller$/i] },
+      tags: "best seller", // Using direct string match for efficiency with index
     })
       .select("name basePrice costPrice images status badge tags")
       .sort({ createdAt: -1 })
       .limit(10)
-      .lean();
+      .lean()
+      .maxTimeMS(3000);
 
     res.status(200).json({
       success: true,
