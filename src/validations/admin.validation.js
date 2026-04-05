@@ -23,24 +23,33 @@ const tagSchema = Joi.object({
 const productSchema = Joi.object({
   name: Joi.string().required().trim().max(200),
   description: Joi.string().required().trim(),
-  price: Joi.number().required().min(0),
-  category: mongoId.required(),
-  brand: mongoId.required(),
-  stock: Joi.number().integer().min(0).default(0),
-  isActive: Joi.boolean().default(true),
-  images: Joi.array().items(Joi.string().uri()).default([]),
-  // These might be strings due to multipart/form-data
-  specifications: Joi.alternatives().try(
-    Joi.object().pattern(Joi.string(), Joi.any()),
+  basePrice: Joi.number().min(0),
+  costPrice: Joi.number().required().min(0),
+  category: Joi.string().required(),
+  brand: Joi.string().allow(""),
+  subCategory: Joi.string().allow(""),
+  availableQuantity: Joi.number().integer().min(0).default(0),
+  lowStockThreshold: Joi.number().integer().min(0).default(10),
+  status: Joi.string().valid("active", "inactive").default("active"),
+  badge: Joi.string().allow(""),
+  shippingWeight: Joi.number().min(0),
+  shippingClass: Joi.string().valid("standard", "fragile").default("standard"),
+  dimensions: Joi.string().allow(""),
+  images: Joi.alternatives().try(
+    Joi.array().items(Joi.string().uri()),
     Joi.string()
   ),
+  specifications: Joi.alternatives().try(
+    Joi.object().pattern(Joi.string(), Joi.any()),
+    Joi.string().allow("")
+  ),
   tags: Joi.alternatives().try(
-    Joi.array().items(mongoId),
-    Joi.string()
+    Joi.array().items(Joi.string()),
+    Joi.string().allow("")
   ),
   existingImages: Joi.alternatives().try(
     Joi.array().items(Joi.string().uri()),
-    Joi.string()
+    Joi.string().allow("")
   ),
 });
 

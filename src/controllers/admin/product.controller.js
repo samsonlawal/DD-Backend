@@ -166,7 +166,7 @@ exports.deactivateProduct = async (req, res) => {
   try {
     const product = await Product.findByIdAndUpdate(
       req.params.id,
-      { isActive: false },
+      { status: "inactive" },
       { new: true },
     );
 
