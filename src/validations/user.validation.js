@@ -32,8 +32,12 @@ const checkoutSchema = Joi.object({
     name: Joi.string().allow(""),
   })).min(1).required(),
   couponCode: Joi.string().allow("").trim().max(50),
-  paymentMethod: Joi.string().valid("card", "cod").required(),
+  paymentMethod: Joi.string().valid("card", "cash", "transfer").required(),
   shippingAddress: addressSchema.required(),
+  ageVerified: Joi.boolean().required().invalid(false).messages({
+    "any.invalid": "You must confirm that you are 18 years of age or older",
+    "any.required": "Age verification is required"
+  }),
 });
 
 module.exports = {

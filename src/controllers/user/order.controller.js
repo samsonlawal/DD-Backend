@@ -11,7 +11,7 @@ exports.createOrder = async (req, res) => {
   session.startTransaction();
 
   try {
-    const { items, couponCode, paymentMethod, shippingAddress } = req.body;
+    const { items, couponCode, paymentMethod, shippingAddress, ageVerified } = req.body;
 
     if (!items || items.length === 0) {
       await session.abortTransaction();
@@ -126,6 +126,13 @@ exports.createOrder = async (req, res) => {
       status: "pending", 
       paymentStatus: "pending",
       stripeSessionId: stripeSession.id,
+      ageVerification: {
+        isVerified: ageVerified,
+        timestamp: new Date(),
+        ipAddress: req.ip || req.headers["x-forwarded-for"] || req.connection.remoteAddress,
+        dob: req.user.dob,
+        ageAtOrder: req.user.dob ? Math.floor((new Date() - new Date(req.user.dob)) / (1000 * 60 * 60 * 24 * 365.25)) : null,
+      },
     }], { session });
 
     const order = createdOrders[0];

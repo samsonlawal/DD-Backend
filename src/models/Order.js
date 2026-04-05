@@ -134,8 +134,24 @@ const orderSchema = new mongoose.Schema(
       type: String,
     },
 
-    notes: {
-      type: String,
+    ageVerification: {
+      isVerified: {
+        type: Boolean,
+        required: true,
+      },
+      timestamp: {
+        type: Date,
+        default: Date.now,
+      },
+      ipAddress: {
+        type: String,
+      },
+      dob: {
+        type: Date,
+      },
+      ageAtOrder: {
+        type: Number,
+      },
     },
   },
   { timestamps: true },
