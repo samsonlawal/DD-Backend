@@ -54,7 +54,7 @@ const productSchema = Joi.object({
 });
 
 const updateOrderStatusSchema = Joi.object({
-  status: Joi.string().valid("Pending", "Processing", "Shipped", "Delivered", "Cancelled").required(),
+  status: Joi.string().valid("pending", "processing", "dispatched", "shipped", "delivered", "cancelled").required(),
   message: Joi.string().allow("").trim().max(500),
 });
 
