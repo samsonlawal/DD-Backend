@@ -43,11 +43,14 @@ const productSchema = Joi.object({
     Joi.array().items(Joi.string()),
     Joi.string()
   ),
-  specifications: Joi.object({
-    volume: Joi.string().allow(""),
-    abv: Joi.string().allow(""),
-    origin: Joi.string().allow(""),
-  }).optional(),
+  specifications: Joi.alternatives().try(
+    Joi.object({
+      volume: Joi.string().allow(""),
+      abv: Joi.string().allow(""),
+      origin: Joi.string().allow(""),
+    }),
+    Joi.string().allow("")
+  ).optional(),
   tags: Joi.alternatives().try(
     Joi.array().items(Joi.string()),
     Joi.string().allow("")
