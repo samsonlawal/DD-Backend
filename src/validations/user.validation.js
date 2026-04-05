@@ -10,7 +10,7 @@ const updateProfileSchema = Joi.object({
   phone: Joi.string().trim().pattern(/^\+?[0-9\s\-\(\)]+$/).message("Invalid phone number format").max(15),
   dob: Joi.date().iso().max("now"),
   gender: Joi.string().valid("male", "female", "non-binary", "other", "prefer not to say"),
-  profileImage: Joi.string().uri().allow(""),
+  profileImage: Joi.string().allow(""),
 });
 
 const addressSchema = Joi.object({
