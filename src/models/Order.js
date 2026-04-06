@@ -133,6 +133,9 @@ const orderSchema = new mongoose.Schema(
     stripeSessionId: {
       type: String,
     },
+    transactionId: {
+      type: String,
+    },
 
     ageVerification: {
       isVerified: {

@@ -76,8 +76,10 @@ app.use(
     origin: [
       "http://localhost:3000",
       "http://localhost:3001",
-      "https://discount-drinks-frontend-git-staging-samsons-projects-c84cc3b1.vercel.app",
+
       "https://discountdrinksandmoreltd.co.uk",
+      "https://admin.discountdrinksandmoreltd.co.uk",
+
       "https://discount-drinks-staging.vercel.app",
 
       "https://discountdrinks.vercel.app",
@@ -123,6 +125,9 @@ app.use("/api/admin/tags", adminTagRoutes);
 app.use("/api/admin/categories", adminCategoryRoutes);
 app.use("/api/admin/brands", adminBrandRoutes);
 app.use("/api/admin/auth", adminAuthRoutes);
+
+
+
 
 app.get("/health", (req, res) => {
   res.status(200).json({ status: "OK", message: "Server is running" });
