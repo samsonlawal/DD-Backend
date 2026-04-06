@@ -84,7 +84,10 @@ exports.getBestSellers = async (req, res) => {
 
 exports.getProductById = async (req, res) => {
   try {
-    const product = await Product.findById(req.params.id)
+    const product = await Product.findOne({
+      _id: req.params.id,
+      status: "active",
+    })
       .select("name brand category subCategory description basePrice costPrice images specifications availableQuantity lowStockThreshold badge tags shippingWeight dimensions status")
       .lean();
 

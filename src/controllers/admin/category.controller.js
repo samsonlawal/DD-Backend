@@ -86,7 +86,7 @@ exports.deactivateCategory = async (req, res) => {
   try {
     const category = await Category.findByIdAndUpdate(
       req.params.id,
-      { isActive: false },
+      { status: "inactive" },
       { new: true },
     );
 

@@ -2,12 +2,12 @@ const Tag = require("../../models/Tag");
 
 exports.getTags = async (req, res) => {
   try {
-    const tags = await Tag.find().select("name isActive createdAt _id");
+    const tags = await Tag.find({ status: "active" }).select("name status createdAt _id");
 
     const formattedTags = tags.map((tag) => ({
       id: tag._id,
       name: tag.name,
-      isActive: tag.isActive,
+      status: tag.status,
       createdAt: tag.createdAt,
     }));
 
@@ -28,8 +28,8 @@ exports.getTagById = async (req, res) => {
   try {
     const tag = await Tag.findOne({
       _id: req.params.id,
-      isActive: true,
-    }).select("name isActive createdAt _id");
+      status: "active",
+    }).select("name status createdAt _id");
 
     if (!tag) {
       return res.status(404).json({
@@ -43,7 +43,7 @@ exports.getTagById = async (req, res) => {
       data: {
         id: tag._id,
         name: tag.name,
-        isActive: tag.isActive,
+        status: tag.status,
         createdAt: tag.createdAt,
       },
     });

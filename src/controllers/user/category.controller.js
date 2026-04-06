@@ -2,7 +2,7 @@ const Category = require("../../models/Category");
 
 exports.getCategories = async (req, res) => {
   try {
-    const categories = await Category.find({ isActive: true });
+    const categories = await Category.find({ status: "active" });
 
     res.status(200).json({
       success: true,
@@ -21,7 +21,7 @@ exports.getCategoryById = async (req, res) => {
   try {
     const category = await Category.findOne({
       _id: req.params.id,
-      isActive: true,
+      status: "active",
     });
 
     if (!category) {
