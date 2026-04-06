@@ -155,6 +155,9 @@ const orderSchema = new mongoose.Schema(
       ageAtOrder: {
         type: Number,
       },
+      userAgent: {
+        type: String,
+      },
     },
   },
   { timestamps: true },

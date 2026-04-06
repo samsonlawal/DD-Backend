@@ -4,11 +4,17 @@ const Joi = require("joi");
 const mongoId = Joi.string().regex(/^[0-9a-fA-F]{24}$/).message("Invalid ID format");
 
 const updateProfileSchema = Joi.object({
-  name: Joi.string().trim().max(50),
+  name: Joi.string().trim().min(2).max(50),
   username: Joi.string().trim().min(3).max(30).alphanum(),
   email: Joi.string().email().lowercase().trim(),
-  phone: Joi.string().trim().pattern(/^\+?[0-9\s\-\(\)]+$/).message("Invalid phone number format").max(15),
-  dob: Joi.date().iso().max("now"),
+  phone: Joi.string().trim().min(10).pattern(/^\+?[0-9\s\-\(\)]+$/).message("Invalid phone number format").max(15),
+  dob: Joi.date().iso().max("now").custom((value, helpers) => {
+    const age = Math.floor((new Date() - new Date(value)) / (1000 * 60 * 60 * 24 * 365.25));
+    if (age < 18) {
+      return helpers.message("You must be at least 18 years of age to purchase from this store.");
+    }
+    return value;
+  }),
   gender: Joi.string().valid("male", "female", "non-binary", "other", "prefer not to say"),
   profileImage: Joi.string().allow(""),
 });

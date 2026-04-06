@@ -19,6 +19,21 @@ exports.createOrder = async (req, res) => {
       return res.status(400).json({ message: "No items provided" });
     }
 
+    // 0️⃣ Profile Completeness Check
+    if (!req.user.name || !req.user.phone || !req.user.dob) {
+      const missing = [];
+      if (!req.user.name) missing.push("Name");
+      if (!req.user.phone) missing.push("Phone Number");
+      if (!req.user.dob) missing.push("Date of Birth");
+
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(400).json({
+        success: false,
+        message: `Please complete your profile before ordering. Missing: ${missing.join(", ")}`,
+      });
+    }
+
     // 1️⃣ Fetch products from DB
     const detailedItems = [];
 
@@ -71,6 +86,25 @@ exports.createOrder = async (req, res) => {
       shippingFee
     });
 
+    // 4.1 Check for minimum order amount (Stripe GBP minimum is £0.30)
+    if (totals.total < 0.30) {
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(400).json({ 
+        message: "The total order amount must be at least £0.30 to proceed with checkout." 
+      });
+    }
+
+    // 4.2 Legal Age Verification Check (Backend Guard)
+    const userAge = Math.floor((new Date() - new Date(req.user.dob)) / (1000 * 60 * 60 * 24 * 365.25));
+    if (userAge < 18) {
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(403).json({ 
+        message: "You must be at least 18 years of age to purchase products from this store." 
+      });
+    }
+
     // 4.5️⃣ Generate Sequential Order ID
     const counter = await Counter.findOneAndUpdate(
       { id: "orderId" },
@@ -95,7 +129,11 @@ exports.createOrder = async (req, res) => {
       success_url: `${origin}/order/success?order_id=${orderId}`,
       cancel_url: `${origin}/order/failed?order_id=${orderId}`,
       client_reference_id: req.user._id.toString(),
-      metadata: { orderId },
+      metadata: { 
+        orderId,
+        isAgeVerified: "true", 
+        ageAtOrder: req.user.dob ? Math.floor((new Date() - new Date(req.user.dob)) / (1000 * 60 * 60 * 24 * 365.25)).toString() : "N/A"
+      },
       line_items: [
         {
           price_data: {
@@ -131,7 +169,8 @@ exports.createOrder = async (req, res) => {
         timestamp: new Date(),
         ipAddress: req.ip || req.headers["x-forwarded-for"] || req.connection.remoteAddress,
         dob: req.user.dob,
-        ageAtOrder: req.user.dob ? Math.floor((new Date() - new Date(req.user.dob)) / (1000 * 60 * 60 * 24 * 365.25)) : null,
+        ageAtOrder: userAge,
+        userAgent: req.headers["user-agent"],
       },
     }], { session });
 
@@ -147,11 +186,14 @@ exports.createOrder = async (req, res) => {
     await session.commitTransaction();
     session.endSession();
 
+    const orderObject = order.toObject();
+    delete orderObject.ageVerification;
+
     // Return the checkout url to redirect the user
     res.status(201).json({
       success: true,
       url: stripeSession.url,
-      order,
+      order: orderObject,
     });
 
   } catch (error) {
@@ -177,7 +219,8 @@ exports.getOrderById = async (req, res) => {
 
     const order = await Order.findOne(query)
       .populate("user", "name email phone")
-      .populate("items.product", "name images price basePrice costPrice description brand");
+      .populate("items.product", "name images price basePrice costPrice description brand")
+      .select("-ageVerification");
 
     if (!order) {
       return res.status(404).json({
@@ -207,7 +250,8 @@ exports.getUserOrders = async (req, res) => {
     const orders = await Order.find({ user: req.params.userId })
       .sort({ createdAt: -1 })
       .skip(skip)
-      .limit(limit);
+      .limit(limit)
+      .select("-ageVerification");
 
     const total = await Order.countDocuments({ user: req.params.userId });
 

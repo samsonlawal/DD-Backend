@@ -38,7 +38,8 @@ exports.handleStripeWebhook = async (req, res) => {
             { orderId },
             {
               paymentStatus: "paid",
-              status: "processing",
+              transactionId: session.payment_intent,
+              status: "processing", 
               $push: {
                 statusHistory: {
                   status: "processing",

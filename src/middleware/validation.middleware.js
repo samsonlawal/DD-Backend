@@ -11,11 +11,15 @@ const validate = (schema, property = "body") => {
     });
 
     if (error) {
-      const errorMessage = error.details.map((detail) => detail.message).join(", ");
+      const cleanErrors = error.details.map((detail) => {
+        const message = detail.message.replace(/\"/g, "");
+        return message.charAt(0).toUpperCase() + message.slice(1);
+      });
+
       return res.status(400).json({
         success: false,
         message: "Validation Error",
-        errors: errorMessage,
+        errors: cleanErrors,
       });
     }
 
