@@ -32,17 +32,17 @@ exports.signup = async (req, res) => {
     const { name, username, email, password } = req.body;
 
     if (!name || !email || !password || !username) {
-      return res.status(400).json({ message: "All fields required" });
+      return res.status(400).json({ success: false, message: "All fields required" });
     }
 
     const existingUser = await User.findOne({ email });
     if (existingUser) {
-      return res.status(400).json({ message: "Email already in use" });
+      return res.status(400).json({ success: false, message: "Email already in use" });
     }
 
     const existingUsername = await User.findOne({ username });
     if (existingUsername) {
-      return res.status(400).json({ message: "Username already in use" });
+      return res.status(400).json({ success: false, message: "Username already in use" });
     }
     const user = await User.create({
       name,
@@ -54,9 +54,9 @@ exports.signup = async (req, res) => {
     // Send Welcome Email asynchronously
     sendWelcomeEmail(user.email, user.name).catch(console.error);
 
-    res.status(201).json({ message: "Signup successful" });
+    res.status(201).json({ success: true, message: "Signup successful" });
   } catch (err) {
-    res.status(500).json({ message: "Signup failed" });
+    res.status(500).json({ success: false, message: "Signup failed" });
   }
 };
 
@@ -66,13 +66,13 @@ exports.login = async (req, res) => {
 
     const user = await User.findOne({ email });
     if (!user) {
-      return res.status(401).json({ message: "Invalid credentials" });
+      return res.status(401).json({ success: false, message: "Invalid credentials" });
     }
 
     console.log(user);
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
-      return res.status(401).json({ message: "Invalid credentials" });
+      return res.status(401).json({ success: false, message: "Invalid credentials" });
     }
 
     // Check if user is admin (for admin login endpoint)
@@ -84,7 +84,7 @@ exports.login = async (req, res) => {
 
     // Guard: prevent admins from logging into the customer store
     if (user.role === "admin") {
-      return res.status(403).json({ message: "Please use the admin portal to login." });
+      return res.status(403).json({ success: false, message: "Please use the admin portal to login." });
     }
 
     res.cookie("token", token, {
@@ -101,7 +101,7 @@ exports.login = async (req, res) => {
       message: "Login Successful",
     });
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    res.status(500).json({ success: false, message: err.message });
   }
 };
 
@@ -111,17 +111,17 @@ exports.adminLogin = async (req, res) => {
 
     const user = await User.findOne({ email });
     if (!user) {
-      return res.status(401).json({ message: "Invalid credentials" });
+      return res.status(401).json({ success: false, message: "Invalid credentials" });
     }
 
     // Only allow admins to use this endpoint
     if (user.role !== "admin") {
-      return res.status(403).json({ message: "Access denied. Admin accounts only." });
+      return res.status(403).json({ success: false, message: "Access denied. Admin accounts only." });
     }
 
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
-      return res.status(401).json({ message: "Invalid credentials" });
+      return res.status(401).json({ success: false, message: "Invalid credentials" });
     }
 
     const token = createToken({ id: user._id, email: user.email });
@@ -141,7 +141,7 @@ exports.adminLogin = async (req, res) => {
       message: "Admin Login Successful",
     });
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    res.status(500).json({ success: false, message: err.message });
   }
 };
 
@@ -152,7 +152,7 @@ exports.logout = (req, res) => {
     sameSite: "None",
   });
 
-  res.json({ message: "Logged out" });
+  res.json({ success: true, message: "Logged out" });
 };
 
 exports.forgotPassword = async (req, res) => {

@@ -16,7 +16,7 @@ exports.createOrder = async (req, res) => {
     if (!items || items.length === 0) {
       await session.abortTransaction();
       session.endSession();
-      return res.status(400).json({ message: "No items provided" });
+      return res.status(400).json({ success: false, message: "No items provided" });
     }
 
     // 0️⃣ Profile Completeness Check
@@ -45,6 +45,7 @@ exports.createOrder = async (req, res) => {
         await session.abortTransaction();
         session.endSession();
         return res.status(404).json({
+          success: false,
           message: `Product not found: ${item.product}`
         });
       }
@@ -53,6 +54,7 @@ exports.createOrder = async (req, res) => {
         await session.abortTransaction();
         session.endSession();
         return res.status(400).json({
+          success: false,
           message: `Insufficient stock for ${item.name}`
         });
       }
@@ -91,6 +93,7 @@ exports.createOrder = async (req, res) => {
       await session.abortTransaction();
       session.endSession();
       return res.status(400).json({ 
+        success: false,
         message: "The total order amount must be at least £0.30 to proceed with checkout." 
       });
     }
@@ -101,6 +104,7 @@ exports.createOrder = async (req, res) => {
       await session.abortTransaction();
       session.endSession();
       return res.status(403).json({ 
+        success: false,
         message: "You must be at least 18 years of age to purchase products from this store." 
       });
     }
@@ -200,7 +204,7 @@ exports.createOrder = async (req, res) => {
     await session.abortTransaction();
     session.endSession();
     console.error("Order Creation Error:", error);
-    res.status(500).json({ message: "Server error during order creation", error: error.message });
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 
