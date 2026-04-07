@@ -1,4 +1,5 @@
 const Order = require("../../models/Order");
+const Product = require("../../models/Product");
 const { sendOrderProgressEmail } = require("../../utils/email");
 
 // Statuses that should trigger a customer notification email
@@ -97,8 +98,20 @@ exports.updateOrderStatus = async (req, res) => {
       return res.status(404).json({ success: false, message: "Order not found" });
     }
 
+    const oldStatus = order.status;
+
     // Update status
     order.status = cleanStatus;
+
+    // Handle stock restoration if status changed TO cancelled
+    if (cleanStatus === "cancelled" && oldStatus !== "cancelled") {
+      console.log(`♻️ Restoring stock for order ${order.orderId} due to admin cancellation.`);
+      for (const item of order.items) {
+        await Product.findByIdAndUpdate(item.product, {
+          $inc: { availableQuantity: item.quantity },
+        });
+      }
+    }
 
     // Record in history
     order.statusHistory.push({

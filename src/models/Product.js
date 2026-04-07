@@ -52,6 +52,11 @@ const productSchema = new mongoose.Schema(
       default: 0,
       min: 0,
     },
+    soldCount: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
     lowStockThreshold: {
       type: Number,
       default: 10,
