@@ -78,9 +78,16 @@ const orderSuccessTemplate = (order) => {
               <p style="margin: 0; font-size: 22px; font-weight: bold; color: #ffffff;">#${orderId}</p>
             </td>
             <td align="right">
-              <span style="background-color: #10b981; color: #ffffff; font-size: 12px; font-weight: bold; padding: 4px 12px; border-radius: 100px; white-space: nowrap;">
-                ✅ Payment Confirmed
-              </span>
+              <div style="margin-bottom: 8px;">
+                <span style="background-color: #10b981; color: #ffffff; font-size: 12px; font-weight: bold; padding: 4px 12px; border-radius: 100px; white-space: nowrap;">
+                  ✅ Payment Confirmed
+                </span>
+              </div>
+              <div>
+                <span style="background-color: #3b82f6; color: #ffffff; font-size: 11px; font-weight: bold; padding: 3px 10px; border-radius: 100px; white-space: nowrap; text-transform: uppercase; letter-spacing: 0.05em;">
+                  🔞 Age Verified
+                </span>
+              </div>
             </td>
           </tr>
         </table>

@@ -279,25 +279,70 @@ exports.getUserOrders = async (req, res) => {
 };
 
 exports.cancelOrder = async (req, res) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
   try {
-    const order = await Order.findByIdAndUpdate(
-      req.params.id,
-      { status: "cancelled" },
-      { new: true, runValidators: true },
-    );
+    const order = await Order.findOne({ _id: req.params.id, user: req.user._id }).session(session);
 
     if (!order) {
+      await session.abortTransaction();
+      session.endSession();
       return res.status(404).json({
         success: false,
         message: "Order not found",
       });
     }
 
+    if (order.status === "cancelled") {
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(400).json({
+        success: false,
+        message: "Order is already cancelled",
+      });
+    }
+
+    // Only allow cancellation of pending/processing/payment confirmed orders
+    const allowedForCancellation = ["pending", "payment confirmed", "processing"];
+    if (!allowedForCancellation.includes(order.status)) {
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(400).json({
+        success: false,
+        message: `Order cannot be cancelled as it is already ${order.status}`,
+      });
+    }
+
+    // Restore stock
+    for (const item of order.items) {
+      await Product.findByIdAndUpdate(
+        item.product,
+        { $inc: { availableQuantity: item.quantity } },
+        { session }
+      );
+    }
+
+    order.status = "cancelled";
+    order.statusHistory.push({
+      status: "cancelled",
+      timestamp: new Date(),
+      message: "Order cancelled by user. Stock restored.",
+    });
+
+    await order.save({ session });
+
+    await session.commitTransaction();
+    session.endSession();
+
     res.status(200).json({
       success: true,
+      message: "Order cancelled and stock restored",
       data: order,
     });
   } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
     res.status(400).json({
       success: false,
       message: error.message,

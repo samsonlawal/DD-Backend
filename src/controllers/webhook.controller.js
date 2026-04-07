@@ -23,7 +23,7 @@ exports.handleStripeWebhook = async (req, res) => {
   } catch (err) {
     console.error(`❌ Webhook signature verification failed: ${err.message}`);
     console.log("Check if STRIPE_WEBHOOK_SECRET in .env matches your Stripe CLI/Dashboard secret.");
-    return res.status(400).send(`Webhook Error: ${err.message}`);
+    return res.status(400).json({ success: false, message: `Webhook Error: ${err.message}` });
   }
 
   try {
@@ -53,8 +53,16 @@ exports.handleStripeWebhook = async (req, res) => {
             .populate("user", "name email")
             .populate("items.product", "name images");
 
-          if (paidOrder) {
-            console.log(`✅ Order ${paidOrder.orderId} successfully paid. Sending confirmation email...`);
+            if (paidOrder) {
+            console.log(`✅ Order ${paidOrder.orderId} successfully paid. Incrementing soldCount and sending confirmation email...`);
+            
+            // Increment soldCount for each item
+            for (const item of paidOrder.items) {
+              await Product.findByIdAndUpdate(item.product, {
+                $inc: { soldCount: item.quantity },
+              });
+            }
+
             // Fire-and-forget — don't block the webhook response
             sendOrderSuccessEmail(paidOrder).catch((err) =>
               console.error(`❌ Failed to send order success email for ${paidOrder.orderId}:`, err.message)
@@ -107,6 +115,6 @@ exports.handleStripeWebhook = async (req, res) => {
     res.json({ received: true });
   } catch (error) {
     console.error("Error processing webhook:", error);
-    res.status(500).json({ message: "Webhook handler failed" });
+    res.status(500).json({ success: false, message: "Webhook handler failed" });
   }
 };
