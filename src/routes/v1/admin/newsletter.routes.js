@@ -1,3 +1,4 @@
+const express = require("express");
 const { getAllSubscribers, getSubscriberCount } = require("../../../controllers/admin/newsletter.controller");
 const adminAuth = require("../../../middleware/adminAuth.middleware");
 const router = express.Router();
