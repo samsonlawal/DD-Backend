@@ -50,7 +50,16 @@ exports.getAllOrders = async (req, res) => {
 
 exports.getOrderById = async (req, res) => {
   try {
-    const order = await Order.findById(req.params.id)
+    const { id } = req.params;
+    let query;
+
+    if (id.match(/^[0-9a-fA-F]{24}$/)) {
+      query = { _id: id };
+    } else {
+      query = { orderId: id };
+    }
+
+    const order = await Order.findOne(query)
       .populate("user", "name email phone")
       .populate("items.product", "name images price basePrice costPrice description brand");
 
@@ -92,7 +101,16 @@ exports.updateOrderStatus = async (req, res) => {
       });
     }
 
-    const order = await Order.findById(req.params.id).populate("user", "name email");
+    const { id } = req.params;
+    let query;
+
+    if (id.match(/^[0-9a-fA-F]{24}$/)) {
+      query = { _id: id };
+    } else {
+      query = { orderId: id };
+    }
+
+    const order = await Order.findOne(query).populate("user", "name email");
 
     if (!order) {
       return res.status(404).json({ success: false, message: "Order not found" });

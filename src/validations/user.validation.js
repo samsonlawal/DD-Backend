@@ -46,8 +46,20 @@ const checkoutSchema = Joi.object({
   }),
 });
 
+// Validation for order lookups (allows both MongoDB _id and ORDxxxx formats)
+const orderIdSchema = Joi.string().custom((value, helpers) => {
+  const isMongoId = /^[0-9a-fA-F]{24}$/.test(value);
+  const isHumanReadableId = /^ORD\d{4,}$/.test(value);
+
+  if (isMongoId || isHumanReadableId) {
+    return value;
+  }
+  return helpers.message("Invalid Order ID format. Must be a MongoDB ID or ORDxxxx");
+});
+
 module.exports = {
   mongoId,
+  orderIdSchema,
   updateProfileSchema,
   addressSchema,
   checkoutSchema,

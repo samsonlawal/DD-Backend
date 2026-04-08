@@ -28,6 +28,7 @@ const userAuthRoutes = require("./routes/v1/user/auth.routes");
 const webhookRoutes = require("./routes/webhook.routes");
 const contactRoutes = require("./routes/v1/contact.routes");
 const newsletterRoutes = require("./routes/v1/user/newsletter.routes");
+const adminNewsletterRoutes = require("./routes/v1/admin/newsletter.routes");
 
 const app = express();
 
@@ -125,6 +126,7 @@ app.use("/api/admin/tags", adminTagRoutes);
 app.use("/api/admin/categories", adminCategoryRoutes);
 app.use("/api/admin/brands", adminBrandRoutes);
 app.use("/api/admin/auth", adminAuthRoutes);
+app.use("/api/admin/newsletter", adminNewsletterRoutes);
 
 
 

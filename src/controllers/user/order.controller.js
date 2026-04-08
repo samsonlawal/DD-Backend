@@ -109,7 +109,10 @@ exports.createOrder = async (req, res) => {
       });
     }
 
-    // 4.5️⃣ Generate Sequential Order ID
+    // 4.5️⃣ Pre-generate MongoDB ID for the order
+    const mongoOrderId = new mongoose.Types.ObjectId();
+
+    // 4.6️⃣ Generate Sequential Order ID
     const counter = await Counter.findOneAndUpdate(
       { id: "orderId" },
       { $inc: { seq: 1 } },
@@ -130,11 +133,12 @@ exports.createOrder = async (req, res) => {
       payment_method_types: ["card"],
       mode: "payment",
       expires_at: expiresAt,
-      success_url: `${origin}/order/success?order_id=${orderId}`,
-      cancel_url: `${origin}/order/failed?order_id=${orderId}`,
+      success_url: `${origin}/order/success?order_id=${mongoOrderId}`,
+      cancel_url: `${origin}/order/failed?order_id=${mongoOrderId}`,
       client_reference_id: req.user._id.toString(),
       metadata: { 
         orderId,
+        mongo_order_id: mongoOrderId.toString(),
         isAgeVerified: "true", 
         ageAtOrder: req.user.dob ? Math.floor((new Date() - new Date(req.user.dob)) / (1000 * 60 * 60 * 24 * 365.25)).toString() : "N/A"
       },
@@ -155,6 +159,7 @@ exports.createOrder = async (req, res) => {
     // 6️⃣ Create order (Inside Transaction)
     // When using transactions, `Order.create` must take an array of documents
     const createdOrders = await Order.create([{
+      _id: mongoOrderId,
       user: req.user._id,
       orderId,
       items: totals.orderItems,
