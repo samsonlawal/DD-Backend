@@ -50,11 +50,12 @@ const checkoutSchema = Joi.object({
 const orderIdSchema = Joi.string().custom((value, helpers) => {
   const isMongoId = /^[0-9a-fA-F]{24}$/.test(value);
   const isHumanReadableId = /^ORD\d{4,}$/.test(value);
+  const isStripeSession = /^cs_(test|live)_[a-zA-Z0-9]+$/.test(value);
 
-  if (isMongoId || isHumanReadableId) {
+  if (isMongoId || isHumanReadableId || isStripeSession) {
     return value;
   }
-  return helpers.message("Invalid Order ID format. Must be a MongoDB ID or ORDxxxx");
+  return helpers.message("Invalid Order ID format. Must be a MongoDB ID, ORDxxxx, or Stripe Session ID");
 });
 
 module.exports = {

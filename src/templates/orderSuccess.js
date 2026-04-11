@@ -3,6 +3,7 @@ const layout = require("./layout");
 const orderSuccessTemplate = (order) => {
   const {
     orderId,
+    _id,
     items = [],
     subtotal = 0,
     tax = 0,
@@ -48,7 +49,7 @@ const orderSuccessTemplate = (order) => {
     <tr>
       <td style="padding-bottom: 20px;">
         <h5 style="font-size: 22px; margin: 0; color: #111111;">
-          Thank you, ${name}! 🎉
+          Thank you, ${name}!
         </h5>
       </td>
     </tr>
@@ -110,7 +111,7 @@ const orderSuccessTemplate = (order) => {
                 Delivery Address
               </p>
               <p style="margin: 0; font-size: 14px; color: #111111; line-height: 22px;">
-                ${shippingAddress.addressLine1 || ""}${shippingAddress.addressLine2 ? `<br>${shippingAddress.addressLine2}` : ""}
+                ${shippingAddress.addressLine1 || shippingAddress.addressLine2 || ""}
                 <br>${shippingAddress.city || ""}, ${shippingAddress.postCode || ""}
                 <br>${shippingAddress.country || ""}
               </p>
@@ -178,14 +179,14 @@ const orderSuccessTemplate = (order) => {
     <tr>
       <td align="left" style="padding-top: 32px; padding-bottom: 24px;">
         <a
-          href="https://discountdrinksandmoreltd.co.uk/user/orders/${orderId}"
+          href="https://discountdrinksandmoreltd.co.uk/user/orders/${_id}"
           target="_blank"
           style="
             background-color: #111111;
             color: #ffffff;
             padding: 14px 28px;
             text-decoration: none;
-            border-radius: 100px;
+            border-radius: 6px;
             font-weight: bold;
             font-size: 15px;
             display: inline-block;

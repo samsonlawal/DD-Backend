@@ -6,6 +6,7 @@ const passwordResetOTPTemplate = require("../templates/passwordResetOTP");
 const passwordResetSuccessTemplate = require("../templates/passwordResetSuccess");
 const orderProgressTemplate = require("../templates/orderProgress");
 const orderSuccessTemplate = require("../templates/orderSuccess");
+const orderAdminNotificationTemplate = require("../templates/orderAdminNotification");
 
 // Configure SendGrid Transport
 const transporter = nodemailer.createTransport(
@@ -19,10 +20,17 @@ const transporter = nodemailer.createTransport(
 // Generic email sender
 const sendEmail = async ({ to, name, subject, html }) => {
   try {
-    const fromAddress = process.env.ADMIN_EMAIL || "support@discountdrinksandmoreltd.co.uk";
+    // CRITICAL: SendGrid requires the 'from' address to be a verified sender.
+    // We use SENDER_EMAIL for the 'from' field, and ADMIN_EMAIL for the notification recipient.
+    const fromAddress = process.env.SENDER_EMAIL || "support@discountdrinksandmoreltd.co.uk";
 
     // Format the recipient so their email client prominently displays their name
     const recipient = name ? `"${name}" <${to}>` : to;
+
+    console.log(`✉️ Attempting to send email...`);
+    console.log(`   From: "Discount Drinks" <${fromAddress}>`);
+    console.log(`   To: ${recipient}`);
+    console.log(`   Subject: ${subject}`);
 
     const info = await transporter.sendMail({
       from: `"Discount Drinks" <${fromAddress}>`,
@@ -31,10 +39,18 @@ const sendEmail = async ({ to, name, subject, html }) => {
       subject,
       html,
     });
-    console.log(`✅ Email sent successfully to ${to} | Subject: ${subject}`);
+    console.log(`✅ Email sent successfully to ${to}`);
     return info;
   } catch (error) {
-    console.error(`❌ Error sending email to ${to}:`, error.message || error);
+    console.error(`❌ FAILED to send email to ${to}:`);
+    console.error(`   Error Status: ${error.code || 'N/A'}`);
+    console.error(`   Error Message: ${error.message || error}`);
+    
+    // If it's a SendGrid specific error (401/403), it's usually API key or verified sender issue
+    if (error.response) {
+      console.error(`   Backend Response:`, JSON.stringify(error.response.body, null, 2));
+    }
+    
     throw error;
   }
 };
@@ -72,6 +88,31 @@ const sendOrderSuccessEmail = async (order) => {
   return sendEmail({ to: email, name, subject, html });
 };
 
+// Sent to the store admin when a new order is paid
+const sendStoreOrderNotificationEmail = async (order) => {
+  try {
+    const storeEmail = process.env.ADMIN_EMAIL;
+    console.log(`🔔 CHECK: Starting Store Notification for Order #${order.orderId}`);
+    
+    if (!storeEmail) {
+      console.warn("⚠️ ABORT: sendStoreOrderNotificationEmail: ADMIN_EMAIL not set in .env!");
+      return;
+    }
+
+    console.log(`📧 Sending business notification to: ${storeEmail}`);
+    
+    const subject = `New Order Received — #${order.orderId}`;
+    const html = orderAdminNotificationTemplate(order);
+
+    const result = await sendEmail({ to: storeEmail, subject, html });
+    console.log(`✅ Business notification sent to ${storeEmail}`);
+    return result;
+  } catch (error) {
+    console.error(`❌ CRITICAL ERROR in sendStoreOrderNotificationEmail:`, error.message);
+    throw error;
+  }
+};
+
 // Sent when the admin updates order status (processing → dispatched → delivered etc.)
 const sendOrderProgressEmail = async (email, name, orderId, status, message) => {
   const subject = `Update on your Order #${orderId} — ${toTitleCase(status)}`;
@@ -89,5 +130,6 @@ module.exports = {
   sendPasswordResetOTP,
   sendPasswordResetSuccess,
   sendOrderSuccessEmail,
+  sendStoreOrderNotificationEmail,
   sendOrderProgressEmail,
 };

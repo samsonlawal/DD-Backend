@@ -1,7 +1,7 @@
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 const Order = require("../models/Order");
 const Product = require("../models/Product");
-const { sendOrderSuccessEmail } = require("../utils/email");
+const { sendOrderSuccessEmail, sendStoreOrderNotificationEmail } = require("../utils/email");
 
 exports.handleStripeWebhook = async (req, res) => {
   console.log("🔔 Stripe Webhook Received!");
@@ -30,12 +30,22 @@ exports.handleStripeWebhook = async (req, res) => {
     switch (event.type) {
       case "checkout.session.completed": {
         const session = event.data.object;
-        const orderId = session.metadata.orderId;
+        const mongoOrderId = session.metadata.mongo_order_id;
+        const fallbackOrderId = session.metadata.orderId;
 
-        if (session.payment_status === "paid" && orderId) {
-          // Populate user + items so the receipt email has full details
+        console.log(`💳 Checkout session completed!`);
+        console.log(`   Session ID: ${session.id}`);
+        console.log(`   Payment Status: ${session.payment_status}`);
+        console.log(`   Metadata Order IDs: Mongo=${mongoOrderId}, Human=${fallbackOrderId}`);
+
+        if (session.payment_status === "paid") {
+          // Use mongo_order_id if available, otherwise fallback to orderId
+          const query = mongoOrderId ? { _id: mongoOrderId } : { orderId: fallbackOrderId };
+          
+          console.log(`🔍 Searching for order with query:`, JSON.stringify(query));
+
           const paidOrder = await Order.findOneAndUpdate(
-            { orderId },
+            query,
             {
               paymentStatus: "paid",
               transactionId: session.payment_intent,
@@ -44,7 +54,7 @@ exports.handleStripeWebhook = async (req, res) => {
                 statusHistory: {
                   status: "processing",
                   timestamp: new Date(),
-                  message: "Payment confirmed. Order is now being processed.",
+                  message: "Payment confirmed via Stripe. Order is now being processed.",
                 },
               },
             },
@@ -53,23 +63,38 @@ exports.handleStripeWebhook = async (req, res) => {
             .populate("user", "name email")
             .populate("items.product", "name images");
 
-            if (paidOrder) {
-            console.log(`✅ Order ${paidOrder.orderId} successfully paid. Incrementing soldCount and sending confirmation email...`);
+          if (paidOrder) {
+            console.log(`✅ Order ${paidOrder.orderId} (ID: ${paidOrder._id}) found and updated to PAID.`);
             
             // Increment soldCount for each item
             for (const item of paidOrder.items) {
-              await Product.findByIdAndUpdate(item.product, {
-                $inc: { soldCount: item.quantity },
-              });
+              if (item.product) {
+                await Product.findByIdAndUpdate(item.product._id || item.product, {
+                  $inc: { soldCount: item.quantity },
+                });
+              }
             }
 
-            // Fire-and-forget — don't block the webhook response
-            sendOrderSuccessEmail(paidOrder).catch((err) =>
-              console.error(`❌ Failed to send order success email for ${paidOrder.orderId}:`, err.message)
-            );
+            console.log(`📧 Dispatching confirmation emails...`);
+            // Use await to ensure emails are sent before finishing the webhook request
+            try {
+              await sendOrderSuccessEmail(paidOrder);
+              console.log(`Successfully dispatched customer email.`);
+            } catch (err) {
+              console.error(`❌ Failed to send order success email:`, err.message);
+            }
+
+            try {
+              await sendStoreOrderNotificationEmail(paidOrder);
+              console.log(`Successfully dispatched business notification.`);
+            } catch (err) {
+              console.error(`❌ Failed to send store notification email:`, err.message);
+            }
           } else {
-            console.warn(`⚠️ Webhook: Order not found for orderId=${orderId}`);
+            console.warn(`⚠️ WEBHOOK ERROR: Order not found in database! Tried Mongo ID: ${mongoOrderId} and Human ID: ${fallbackOrderId}`);
           }
+        } else {
+          console.log(`ℹ️ Session completed but payment_status is '${session.payment_status}'. Waiting for further events...`);
         }
         break;
       }

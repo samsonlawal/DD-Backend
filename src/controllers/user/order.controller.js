@@ -221,6 +221,9 @@ exports.getOrderById = async (req, res) => {
     // Check if the provided id is a valid MongoDB ObjectId
     if (mongoose.Types.ObjectId.isValid(id)) {
       query = { _id: id, user: req.user._id };
+    } else if (id.startsWith("cs_test_") || id.startsWith("cs_live_")) {
+      // Otherwise, check if it's a Stripe Checkout Session ID
+      query = { stripeSessionId: id, user: req.user._id };
     } else {
       // Otherwise, assume it's the human-readable orderId (e.g., ORD0001)
       query = { orderId: id, user: req.user._id };
