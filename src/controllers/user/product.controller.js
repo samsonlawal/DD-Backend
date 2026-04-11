@@ -29,7 +29,7 @@ exports.getProducts = async (req, res) => {
 
     const [products, total] = await Promise.all([
       Product.find(filter)
-        .select("name basePrice costPrice images status badge tags")
+        .select("name basePrice costPrice images status badge tags availableQuantity lowStockThreshold")
         .sort({ status: 1, createdAt: -1 })
         .skip(skip)
         .limit(limit)
@@ -63,7 +63,7 @@ exports.getBestSellers = async (req, res) => {
       status: "active",
       tags: "best seller", // Using direct string match for efficiency with index
     })
-      .select("name basePrice costPrice images status badge tags")
+      .select("name basePrice costPrice images status badge tags availableQuantity lowStockThreshold")
       .sort({ createdAt: -1 })
       .limit(10)
       .lean()

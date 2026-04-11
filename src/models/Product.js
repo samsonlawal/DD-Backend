@@ -124,6 +124,11 @@ const productSchema = new mongoose.Schema(
           }
         }
 
+        // Include stock indicators for frontend display
+        ret.stockQuantity = ret.availableQuantity;
+        ret.outOfStock = ret.availableQuantity <= 0;
+        ret.lowStock = ret.availableQuantity > 0 && ret.availableQuantity <= (ret.lowStockThreshold || 10);
+
         delete ret.__v;
         return ret;
       }

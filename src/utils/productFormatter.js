@@ -41,6 +41,12 @@ const formatProduct = (product) => {
     }
   }
 
+  // Inject stock indicators
+  const aq = formatted.availableQuantity || 0;
+  formatted.stockQuantity = aq;
+  formatted.outOfStock = aq <= 0;
+  formatted.lowStock = aq > 0 && aq <= (formatted.lowStockThreshold || 10);
+
   return formatted;
 };
 
