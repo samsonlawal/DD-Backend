@@ -101,7 +101,7 @@ const orderAdminNotificationTemplate = (order) => {
     <tr>
       <td style="text-align: left; padding-top: 16px">
         <a
-          href="https://admin.discountdrinksandmoreltd.co.uk/orders/${_id}"
+          href="https://admin.discountdrinksandmoreltd.co.uk/dashboard/orders"
           style="
             background-color: #345c72;
             color: #ffffff;
