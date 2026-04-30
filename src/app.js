@@ -3,6 +3,7 @@ const cookieParser = require("cookie-parser");
 const cors = require("cors");
 const helmet = require("helmet");
 const xssCleaner = require("./middleware/sanitization.middleware");
+// const {publicRateLimit, sensitiveRateLimit} = require("./middleware/rateLimit.middleware");
 
 const userOrderRoutes = require("./routes/v1/user/order.routes");
 const adminOrderRoutes = require("./routes/v1/admin/order.routes");
