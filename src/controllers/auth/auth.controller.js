@@ -4,11 +4,20 @@ const User = require("../../models/User");
 const crypto = require("crypto");
 const { sendWelcomeEmail, sendPasswordResetOTP, sendPasswordResetSuccess } = require("../../utils/email");
 
-const maxAge = 3 * 24 * 60 * 60;
-const createToken = ({ id, email }) => {
-  return jwt.sign({ id, email }, process.env.JWT_SECRET, {
-    expiresIn: maxAge,
-  });
+const generateAccessToken = (user) => {
+  return jwt.sign(
+    { id: user._id, email: user.email, role: user.role },
+    process.env.JWT_SECRET,
+    { expiresIn: "3d" } // 🧪 TESTING: change back to "3d" for production
+  );
+};
+
+const generateRefreshToken = (user) => {
+  return jwt.sign(
+    { id: user._id },
+    process.env.REFRESH_TOKEN_SECRET || process.env.JWT_SECRET,
+    { expiresIn: "14d" }
+  );
 };
 
 const formattedUser = (user) => {
@@ -80,23 +89,34 @@ exports.login = async (req, res) => {
     //   return res.status(403).json({ message: "Admin access required" });
     // }
 
-    const token = createToken({ id: user._id, email: user.email });
+    const accessToken = generateAccessToken(user);
+    const refreshToken = generateRefreshToken(user);
 
     // Guard: prevent admins from logging into the customer store
     if (user.role === "admin") {
       return res.status(403).json({ success: false, message: "Please use the admin portal to login." });
     }
 
-    res.cookie("token", token, {
+    // Set Access Token Cookie (Web)
+    res.cookie("token", accessToken, {
       httpOnly: true,
       sameSite: "None",
       secure: true,
-      maxAge: 1 * 24 * 60 * 60 * 1000,
+      maxAge: 3 * 24 * 60 * 60 * 1000, // 🧪 TESTING: 30 seconds — change back to 3 * 24 * 60 * 60 * 1000 for production
+    });
+
+    // Set Refresh Token Cookie (Web)
+    res.cookie("refreshToken", refreshToken, {
+      httpOnly: true,
+      sameSite: "None",
+      secure: true,
+      maxAge: 14 * 24 * 60 * 60 * 1000, // 14 days
     });
 
     res.status(200).json({
       user: formattedUser(user),
-      token,
+      token: accessToken, // Access token for Bearer (iOS/Mobile)
+      refreshToken,       // Refresh token for storage (iOS/Mobile)
       success: true,
       message: "Login Successful",
     });
@@ -124,19 +144,28 @@ exports.adminLogin = async (req, res) => {
       return res.status(401).json({ success: false, message: "Invalid credentials" });
     }
 
-    const token = createToken({ id: user._id, email: user.email });
+    const accessToken = generateAccessToken(user);
+    const refreshToken = generateRefreshToken(user);
 
-    // Use a DIFFERENT cookie name so admin sessions never collide with customer sessions
-    res.cookie("admin_token", token, {
+    // Use a DIFFERENT cookie names so admin sessions never collide with customer sessions
+    res.cookie("admin_token", accessToken, {
       httpOnly: true,
       sameSite: "None",
       secure: true,
-      maxAge: 1 * 24 * 60 * 60 * 1000,
+      maxAge: 15 * 60 * 1000,
+    });
+
+    res.cookie("admin_refreshToken", refreshToken, {
+      httpOnly: true,
+      sameSite: "None",
+      secure: true,
+      maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
     res.status(200).json({
       user: formattedUser(user),
-      token,
+      token: accessToken,
+      refreshToken,
       success: true,
       message: "Admin Login Successful",
     });
@@ -146,13 +175,55 @@ exports.adminLogin = async (req, res) => {
 };
 
 exports.logout = (req, res) => {
-  res.clearCookie("token", {
-    httpOnly: true,
-    // secure: process.env.NODE_ENV === "production",
-    sameSite: "None",
+  // Clear all potential auth cookies
+  ["token", "refreshToken", "admin_token", "admin_refreshToken"].forEach(c => {
+    res.clearCookie(c, {
+      httpOnly: true,
+      sameSite: "None",
+      secure: true,
+    });
   });
 
   res.json({ success: true, message: "Logged out" });
+};
+
+exports.refreshToken = async (req, res) => {
+  try {
+    // 1. Get refresh token from Cookie OR Body (iOS/Mobile)
+    const rf_token = req.cookies.refreshToken || req.cookies.admin_refreshToken || req.body.refreshToken;
+
+    if (!rf_token) {
+      return res.status(401).json({ success: false, message: "Refresh token missing" });
+    }
+
+    // 2. Verify Refresh Token
+    const decoded = jwt.verify(rf_token, process.env.REFRESH_TOKEN_SECRET || process.env.JWT_SECRET);
+    
+    // 3. Find user
+    const user = await User.findById(decoded.id);
+    if (!user) {
+      return res.status(401).json({ success: false, message: "User not found" });
+    }
+
+    // 4. Generate NEW Access Token
+    const accessToken = generateAccessToken(user);
+
+    // 5. Update Cookie (if applicable)
+    const cookieName = user.role === "admin" ? "admin_token" : "token";
+    res.cookie(cookieName, accessToken, {
+      httpOnly: true,
+      sameSite: "None",
+      secure: true,
+      maxAge: 3 * 24 * 60 * 60 * 1000,
+    });
+
+    res.status(200).json({
+      success: true,
+      token: accessToken,
+    });
+  } catch (err) {
+    res.status(401).json({ success: false, message: "Invalid or expired refresh token" });
+  }
 };
 
 exports.forgotPassword = async (req, res) => {
