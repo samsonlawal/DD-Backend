@@ -10,7 +10,9 @@ exports.getProducts = async (req, res) => {
     const { category, brand, subCategory, minPrice, maxPrice, tags } = req.query;
     const filter = { status: "active" };
 
-    if (category && category !== "") filter.category = category;
+    const escapeRegex = (string) => string.replace(/[-\/\\^$*+?.()|[\]{}]/g, "\\$&");
+
+    if (category && category !== "") filter.category = { $regex: new RegExp(`^${escapeRegex(category)}$`, "i") };
     if (brand && brand !== "") filter.brand = brand;
     if (subCategory && subCategory !== "") filter.subCategory = subCategory;
 
